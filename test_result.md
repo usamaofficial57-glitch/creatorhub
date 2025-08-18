@@ -318,15 +318,16 @@ frontend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "1.1"
+  test_sequence: 2
+  run_ui: false
 
 test_plan:
   current_focus:
-    - "Sidebar Navigation"
-    - "Dashboard Stats and Functionality"
-    - "Content Ideas Page"
-    - "Competitor Analysis Page"
+    - "YouTube Data API Integration - Trending Videos"
+    - "YouTube Data API Integration - Video Search"
+    - "YouTube Data API Integration - Channel Statistics"
+    - "OpenAI Content Generation Integration"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
