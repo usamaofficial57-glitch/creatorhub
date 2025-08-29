@@ -172,6 +172,60 @@ const Dashboard = () => {
     }
   };
 
+  const handleDisconnectChannel = async (channelId, channelName) => {
+    if (!window.confirm(`Are you sure you want to disconnect "${channelName}"? This will remove all associated data.`)) {
+      return;
+    }
+
+    setManagingChannels(true);
+    try {
+      await channelsApi.disconnectChannel(channelId);
+      
+      toast({
+        title: "Channel Disconnected",
+        description: `"${channelName}" has been disconnected successfully.`,
+      });
+
+      // Refresh dashboard data
+      await fetchDashboardData();
+      
+    } catch (error) {
+      console.error('Error disconnecting channel:', error);
+      toast({
+        title: "Disconnection Failed",
+        description: error.response?.data?.detail || "Failed to disconnect channel. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setManagingChannels(false);
+    }
+  };
+
+  const handleSetPrimaryChannel = async (channelId, channelName) => {
+    setManagingChannels(true);
+    try {
+      await channelsApi.setPrimaryChannel(channelId);
+      
+      toast({
+        title: "Primary Channel Updated",
+        description: `"${channelName}" is now your primary channel.`,
+      });
+
+      // Refresh dashboard data
+      await fetchDashboardData();
+      
+    } catch (error) {
+      console.error('Error setting primary channel:', error);
+      toast({
+        title: "Update Failed",
+        description: error.response?.data?.detail || "Failed to update primary channel. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setManagingChannels(false);
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
