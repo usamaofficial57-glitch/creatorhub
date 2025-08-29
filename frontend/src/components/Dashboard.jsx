@@ -57,7 +57,29 @@ const Dashboard = () => {
             youtubeApi.getTrending('all', 'US', 10)
           ]);
           
-          setAnalytics(analyticsData);
+          console.log('Analytics API response:', analyticsData);
+          console.log('Connected channels:', channelsData);
+          
+          // Ensure analytics shows connected if we have channels, regardless of API response
+          if (analyticsData.connected === false && channelsData.length > 0) {
+            // Override analytics connected status if we know we have channels
+            const primaryChannel = channelsData.find(ch => ch.is_primary) || channelsData[0];
+            setAnalytics({
+              ...analyticsData,
+              connected: true,
+              channelInfo: {
+                name: primaryChannel.channel_name,
+                id: primaryChannel.channel_id,
+                handle: primaryChannel.channel_handle,
+                thumbnail: primaryChannel.thumbnail_url
+              },
+              totalSubscribers: primaryChannel.subscriber_count || analyticsData.totalSubscribers || 0,
+              videoCount: primaryChannel.video_count || analyticsData.videoCount || 0
+            });
+          } else {
+            setAnalytics(analyticsData);
+          }
+          
           setTrendingVideos(trendingData.slice(0, 3));
         } catch (apiError) {
           console.error('Error fetching analytics/trending data:', apiError);
