@@ -37,25 +37,33 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      // Fetch analytics and trending videos in parallel
-      const [analyticsData, trendingData] = await Promise.all([
-        analyticsApi.getDashboardAnalytics(),
-        youtubeApi.getTrending('all', 'US', 10)
-      ]);
+      // Always fetch connected channels first to understand the state
+      const channelsData = await channelsApi.getConnectedChannels();
+      setConnectedChannels(channelsData);
       
-      setAnalytics(analyticsData);
-      setTrendingVideos(trendingData.slice(0, 3)); // Show only top 3
-      
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      
-      // Before showing error state, check if we have connected channels
-      try {
-        const connectedChannels = await channelsApi.getConnectedChannels();
-        const primaryChannel = connectedChannels.find(ch => ch.is_primary);
-        
-        if (primaryChannel) {
-          // We have connected channels, show error state with channel info
+      if (channelsData.length === 0) {
+        // No channels connected
+        setAnalytics({
+          connected: false,
+          message: "No YouTube channels connected. Connect your first channel to view analytics.",
+          error: false
+        });
+        setTrendingVideos([]);
+      } else {
+        // We have connected channels, try to fetch analytics and trending data
+        try {
+          const [analyticsData, trendingData] = await Promise.all([
+            analyticsApi.getDashboardAnalytics(),
+            youtubeApi.getTrending('all', 'US', 10)
+          ]);
+          
+          setAnalytics(analyticsData);
+          setTrendingVideos(trendingData.slice(0, 3));
+        } catch (apiError) {
+          console.error('Error fetching analytics/trending data:', apiError);
+          
+          // Analytics/trending failed but we have channels - show error state with channel info
+          const primaryChannel = channelsData.find(ch => ch.is_primary) || channelsData[0];
           setAnalytics({
             connected: true,
             channelInfo: {
@@ -64,7 +72,7 @@ const Dashboard = () => {
               handle: primaryChannel.channel_handle,
               thumbnail: primaryChannel.thumbnail_url
             },
-            message: "Unable to load analytics data. Please try refreshing.",
+            message: "Unable to load analytics data. Your channels are connected but data is temporarily unavailable.",
             error: true,
             totalViews: 0,
             totalSubscribers: primaryChannel.subscriber_count || 0,
@@ -73,41 +81,33 @@ const Dashboard = () => {
             topPerformingVideo: null,
             monthlyGrowth: []
           });
+          setTrendingVideos([]);
           
           toast({
             title: "Analytics Unavailable",
-            description: "Connected channel found but analytics data couldn't be loaded. Try refreshing.",
-            variant: "destructive",
-          });
-        } else {
-          // No channels connected, show connect state
-          setAnalytics({
-            connected: false,
-            message: "No YouTube channels connected. Please connect a channel to view analytics.",
-            error: error.message
-          });
-          
-          toast({
-            title: "Error",
-            description: "Failed to load dashboard data.",
+            description: "Connected channels found but analytics data couldn't be loaded.",
             variant: "destructive",
           });
         }
-      } catch (channelError) {
-        console.error('Error checking connected channels:', channelError);
-        // Fallback to error state
-        setAnalytics({
-          connected: false,
-          message: "Failed to load data. Please refresh or check your connection.",
-          error: error.message
-        });
-        
-        toast({
-          title: "Error",
-          description: "Failed to load dashboard data.",
-          variant: "destructive",
-        });
       }
+      
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      
+      // Complete failure - show error state
+      setAnalytics({
+        connected: false,
+        message: "Failed to load data. Please refresh or check your connection.",
+        error: error.message
+      });
+      setConnectedChannels([]);
+      setTrendingVideos([]);
+      
+      toast({
+        title: "Connection Error",
+        description: "Failed to load dashboard data. Please try refreshing.",
+        variant: "destructive",
+      });
       
     } finally {
       setLoading(false);
