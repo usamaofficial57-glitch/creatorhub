@@ -461,15 +461,38 @@ async def connect_channel(request: ChannelConnectionRequest):
         channel_id = None
         
         # Extract channel ID from different formats
+        input_value = None
+        
         if request.channel_id:
             channel_id = request.channel_id
         elif request.channel_url:
-            # Extract channel ID from URL (handles different YouTube URL formats)
-            if '/channel/' in request.channel_url:
-                channel_id = request.channel_url.split('/channel/')[-1].split('?')[0]
-            elif '/c/' in request.channel_url or '/@' in request.channel_url:
-                # For custom URLs, we need to search by name
-                custom_name = request.channel_url.split('/')[-1].replace('@', '')
+            input_value = request.channel_url.strip()
+        elif request.channel_handle:
+            input_value = request.channel_handle.strip()
+        
+        if input_value and not channel_id:
+            # Check if it's a direct channel ID (starts with UC and 24 characters)
+            if input_value.startswith('UC') and len(input_value) == 24:
+                channel_id = input_value
+            # Check if it's a URL with channel ID
+            elif '/channel/' in input_value:
+                channel_id = input_value.split('/channel/')[-1].split('?')[0].split('/')[0]
+            # Check if it's a handle (starts with @)
+            elif input_value.startswith('@'):
+                handle = input_value[1:]  # Remove @ symbol
+                search_request = youtube.search().list(
+                    part="snippet",
+                    q=handle,
+                    type="channel",
+                    maxResults=1
+                )
+                search_response = search_request.execute()
+                if search_response.get('items'):
+                    channel_id = search_response['items'][0]['snippet']['channelId']
+            # Check if it's a custom URL (/c/ or /user/)
+            elif '/c/' in input_value or '/user/' in input_value or '/@' in input_value:
+                # Extract custom name from URL
+                custom_name = input_value.split('/')[-1].replace('@', '')
                 search_request = youtube.search().list(
                     part="snippet",
                     q=custom_name,
@@ -479,17 +502,17 @@ async def connect_channel(request: ChannelConnectionRequest):
                 search_response = search_request.execute()
                 if search_response.get('items'):
                     channel_id = search_response['items'][0]['snippet']['channelId']
-        elif request.channel_handle:
-            # Search by handle
-            search_request = youtube.search().list(
-                part="snippet",
-                q=request.channel_handle,
-                type="channel",
-                maxResults=1
-            )
-            search_response = search_request.execute()
-            if search_response.get('items'):
-                channel_id = search_response['items'][0]['snippet']['channelId']
+            # If it's just a plain name/handle without @, try searching
+            else:
+                search_request = youtube.search().list(
+                    part="snippet",
+                    q=input_value,
+                    type="channel",
+                    maxResults=1
+                )
+                search_response = search_request.execute()
+                if search_response.get('items'):
+                    channel_id = search_response['items'][0]['snippet']['channelId']
         
         if not channel_id:
             raise HTTPException(status_code=400, detail="Could not extract channel ID from provided information")
