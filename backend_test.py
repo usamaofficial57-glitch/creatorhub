@@ -521,9 +521,230 @@ class BackendTester:
         except Exception as e:
             self.log_result("Dashboard No Channels", "FAIL", f"Request error: {str(e)}")
 
+    def test_multi_channel_scenarios(self):
+        """Test comprehensive multi-channel scenarios"""
+        print("\n🔄 MULTI-CHANNEL SCENARIO TESTING")
+        print("-" * 60)
+        
+        # Connect multiple channels with different formats
+        print("Connecting multiple channels...")
+        channel_ids = []
+        
+        # Channel 1: Marques Brownlee (Channel ID format)
+        channel_id_1 = self.test_channel_connection_channel_id()
+        if channel_id_1:
+            channel_ids.append(channel_id_1)
+        
+        # Channel 2: MrBeast (URL format)  
+        channel_id_2 = self.test_channel_connection_url_formats()
+        if channel_id_2:
+            channel_ids.append(channel_id_2)
+        
+        # Channel 3: Handle format (try another channel)
+        try:
+            payload = {"channel_handle": "@TechLinked"}
+            response = requests.post(f"{BACKEND_URL}/channels/connect", json=payload, timeout=20)
+            if response.status_code == 200:
+                data = response.json()
+                channel_ids.append(data['channel_id'])
+                self.log_result("Multi-Channel Connection (Handle)", "PASS", 
+                              f"Connected {data['channel_name']} via handle")
+            elif response.status_code == 400 and "already connected" in response.text:
+                self.log_result("Multi-Channel Connection (Handle)", "PASS", 
+                              "Channel already connected (expected)")
+        except Exception as e:
+            self.log_result("Multi-Channel Connection (Handle)", "FAIL", f"Error: {str(e)}")
+        
+        # Test switching primary channels
+        if len(channel_ids) >= 2:
+            print(f"\nTesting primary channel switching with {len(channel_ids)} channels...")
+            for i, channel_id in enumerate(channel_ids[:2]):  # Test first 2 channels
+                self.test_set_primary_channel(channel_id)
+                time.sleep(1)  # Brief pause between switches
+                
+                # Verify dashboard shows correct primary channel
+                try:
+                    response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=20)
+                    if response.status_code == 200:
+                        data = response.json()
+                        if data.get('connected') and data.get('channelInfo'):
+                            self.log_result(f"Primary Channel Switch {i+1}", "PASS", 
+                                          f"Dashboard shows primary channel: {data['channelInfo']['name']}")
+                        else:
+                            self.log_result(f"Primary Channel Switch {i+1}", "FAIL", 
+                                          "Dashboard not showing connected channel")
+                except Exception as e:
+                    self.log_result(f"Primary Channel Switch {i+1}", "FAIL", f"Error: {str(e)}")
+        
+        # Test disconnecting individual channels
+        if len(channel_ids) >= 2:
+            print(f"\nTesting individual channel disconnection...")
+            # Disconnect the last connected channel
+            self.test_disconnect_channel(channel_ids[-1])
+            
+            # Verify remaining channels still work
+            try:
+                response = requests.get(f"{BACKEND_URL}/channels", timeout=15)
+                if response.status_code == 200:
+                    remaining_channels = response.json()
+                    self.log_result("Post-Disconnect Channel List", "PASS", 
+                                  f"Remaining channels: {len(remaining_channels)}")
+                    
+                    # Verify dashboard still works with remaining channels
+                    response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=20)
+                    if response.status_code == 200:
+                        data = response.json()
+                        if data.get('connected'):
+                            self.log_result("Post-Disconnect Dashboard", "PASS", 
+                                          "Dashboard still functional after channel disconnect")
+                        else:
+                            self.log_result("Post-Disconnect Dashboard", "PASS", 
+                                          "Dashboard correctly shows no channels after disconnect")
+            except Exception as e:
+                self.log_result("Post-Disconnect Verification", "FAIL", f"Error: {str(e)}")
+    
+    def test_comprehensive_error_handling(self):
+        """Test comprehensive error handling scenarios"""
+        print("\n⚠️ ERROR HANDLING TESTING")
+        print("-" * 60)
+        
+        # Test invalid channel ID
+        try:
+            payload = {"channel_id": "INVALID_CHANNEL_ID_12345"}
+            response = requests.post(f"{BACKEND_URL}/channels/connect", json=payload, timeout=15)
+            if response.status_code in [400, 404]:
+                self.log_result("Invalid Channel ID Error", "PASS", 
+                              f"Correctly handled invalid channel ID: {response.status_code}")
+            else:
+                self.log_result("Invalid Channel ID Error", "FAIL", 
+                              f"Unexpected response: {response.status_code}")
+        except Exception as e:
+            self.log_result("Invalid Channel ID Error", "FAIL", f"Request error: {str(e)}")
+        
+        # Test malformed URL
+        try:
+            payload = {"channel_url": "not-a-valid-url"}
+            response = requests.post(f"{BACKEND_URL}/channels/connect", json=payload, timeout=15)
+            if response.status_code in [400, 404]:
+                self.log_result("Malformed URL Error", "PASS", 
+                              f"Correctly handled malformed URL: {response.status_code}")
+            else:
+                self.log_result("Malformed URL Error", "FAIL", 
+                              f"Unexpected response: {response.status_code}")
+        except Exception as e:
+            self.log_result("Malformed URL Error", "FAIL", f"Request error: {str(e)}")
+        
+        # Test non-existent channel handle
+        try:
+            payload = {"channel_handle": "@NonExistentChannelHandle12345"}
+            response = requests.post(f"{BACKEND_URL}/channels/connect", json=payload, timeout=15)
+            if response.status_code in [400, 404]:
+                self.log_result("Non-existent Handle Error", "PASS", 
+                              f"Correctly handled non-existent handle: {response.status_code}")
+            else:
+                self.log_result("Non-existent Handle Error", "FAIL", 
+                              f"Unexpected response: {response.status_code}")
+        except Exception as e:
+            self.log_result("Non-existent Handle Error", "FAIL", f"Request error: {str(e)}")
+        
+        # Test duplicate connection (connect same channel twice)
+        try:
+            # First connection
+            payload = {"channel_id": "UCBJycsmduvYEL83R_U4JriQ"}  # Marques Brownlee
+            response1 = requests.post(f"{BACKEND_URL}/channels/connect", json=payload, timeout=15)
+            
+            # Second connection (should fail)
+            response2 = requests.post(f"{BACKEND_URL}/channels/connect", json=payload, timeout=15)
+            
+            if response2.status_code == 400 and "already connected" in response2.text.lower():
+                self.log_result("Duplicate Connection Error", "PASS", 
+                              "Correctly prevented duplicate channel connection")
+            else:
+                self.log_result("Duplicate Connection Error", "FAIL", 
+                              f"Unexpected response for duplicate: {response2.status_code}")
+        except Exception as e:
+            self.log_result("Duplicate Connection Error", "FAIL", f"Request error: {str(e)}")
+        
+        # Test operations on non-existent channel
+        try:
+            fake_channel_id = "NON_EXISTENT_CHANNEL_ID"
+            response = requests.put(f"{BACKEND_URL}/channels/{fake_channel_id}/primary", timeout=15)
+            if response.status_code == 404:
+                self.log_result("Non-existent Channel Primary", "PASS", 
+                              "Correctly handled setting primary on non-existent channel")
+            else:
+                self.log_result("Non-existent Channel Primary", "FAIL", 
+                              f"Unexpected response: {response.status_code}")
+        except Exception as e:
+            self.log_result("Non-existent Channel Primary", "FAIL", f"Request error: {str(e)}")
+        
+        # Test delete non-existent channel
+        try:
+            fake_channel_id = "NON_EXISTENT_CHANNEL_ID"
+            response = requests.delete(f"{BACKEND_URL}/channels/{fake_channel_id}", timeout=15)
+            if response.status_code == 404:
+                self.log_result("Non-existent Channel Delete", "PASS", 
+                              "Correctly handled deleting non-existent channel")
+            else:
+                self.log_result("Non-existent Channel Delete", "FAIL", 
+                              f"Unexpected response: {response.status_code}")
+        except Exception as e:
+            self.log_result("Non-existent Channel Delete", "FAIL", f"Request error: {str(e)}")
+
+    def test_dashboard_state_management(self):
+        """Test dashboard analytics in different states"""
+        print("\n📊 DASHBOARD STATE MANAGEMENT TESTING")
+        print("-" * 60)
+        
+        # Test dashboard with no channels
+        try:
+            # First ensure no channels are connected
+            response = requests.get(f"{BACKEND_URL}/channels", timeout=15)
+            if response.status_code == 200:
+                channels = response.json()
+                # Disconnect all channels for clean test
+                for channel in channels:
+                    requests.delete(f"{BACKEND_URL}/channels/{channel['channel_id']}", timeout=10)
+            
+            # Test dashboard with no channels
+            response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=20)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('connected') == False and 'message' in data:
+                    self.log_result("Dashboard No Channels State", "PASS", 
+                                  f"Correct no-channels state: {data['message']}")
+                else:
+                    self.log_result("Dashboard No Channels State", "FAIL", 
+                                  f"Unexpected no-channels response: {data}")
+        except Exception as e:
+            self.log_result("Dashboard No Channels State", "FAIL", f"Error: {str(e)}")
+        
+        # Connect a channel and test dashboard with connection
+        try:
+            payload = {"channel_id": "UCBJycsmduvYEL83R_U4JriQ"}  # Marques Brownlee
+            response = requests.post(f"{BACKEND_URL}/channels/connect", json=payload, timeout=20)
+            
+            if response.status_code in [200, 400]:  # 400 if already connected
+                # Test dashboard with connected channel
+                response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=25)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('connected') == True and data.get('channelInfo'):
+                        channel_info = data['channelInfo']
+                        self.log_result("Dashboard Connected State", "PASS", 
+                                      f"Connected state: {channel_info['name']} - {data['totalViews']} views")
+                    else:
+                        self.log_result("Dashboard Connected State", "FAIL", 
+                                      f"Invalid connected state response: {data}")
+                else:
+                    self.log_result("Dashboard Connected State", "FAIL", 
+                                  f"Dashboard request failed: {response.status_code}")
+        except Exception as e:
+            self.log_result("Dashboard Connected State", "FAIL", f"Error: {str(e)}")
+
     def run_focused_tests(self):
         """Run focused tests for the review request issues"""
-        print("🎯 FOCUSED TESTING: YouTube Channel Connection & Dashboard Analytics")
+        print("🎯 COMPREHENSIVE YOUTUBE CHANNEL MANAGEMENT TESTING")
         print(f"Testing against: {BACKEND_URL}")
         print("=" * 80)
         
@@ -531,37 +752,33 @@ class BackendTester:
         print("\n1️⃣ Checking current database state...")
         existing_channels = self.test_database_state_check()
         
-        # 2. Test dashboard with current state
-        print("\n2️⃣ Testing dashboard with current state...")
-        self.test_dashboard_with_no_channels()
+        # 2. Test dashboard state management
+        self.test_dashboard_state_management()
         
-        # 3. Test connecting new channels
-        print("\n3️⃣ Testing channel connection...")
+        # 3. Test basic channel connection formats
+        print("\n3️⃣ Testing channel connection formats...")
         channel_id_1 = self.test_channel_connection_channel_id()  # Marques Brownlee
         channel_id_2 = self.test_channel_connection_url_formats()  # MrBeast
+        channel_id_3 = self.test_channel_connection_handle()  # Handle format
         
-        # 4. Test listing channels after connection
-        print("\n4️⃣ Testing channel listing after connections...")
+        # 4. Test channel management operations
+        print("\n4️⃣ Testing channel management operations...")
         self.test_get_connected_channels()
         
-        # 5. Test setting primary channel
-        test_channel_id = channel_id_1 or channel_id_2
-        if test_channel_id:
-            print("\n5️⃣ Testing primary channel setting...")
-            self.test_set_primary_channel(test_channel_id)
-            
-            # 6. Test dashboard with connected channel
-            print("\n6️⃣ Testing dashboard with connected channel...")
-            self.test_analytics_dashboard_with_connected_channel()
+        # 5. Test multi-channel scenarios
+        self.test_multi_channel_scenarios()
+        
+        # 6. Test comprehensive error handling
+        self.test_comprehensive_error_handling()
         
         # 7. Test basic API functionality
         print("\n7️⃣ Testing basic API functionality...")
         self.test_health_check()
         self.test_youtube_channel_stats()
         
-        # Print focused summary
+        # Print comprehensive summary
         print("\n" + "=" * 80)
-        print("🎯 FOCUSED TEST SUMMARY")
+        print("🎯 COMPREHENSIVE TEST SUMMARY")
         print("=" * 80)
         print(f"Total Tests: {self.total_tests}")
         print(f"Passed: {self.passed_tests}")
