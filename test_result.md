@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the CreatorHub YouTube creator tool application for navigation, dashboard functionality, content ideas page, competitor analysis page, interactive elements, and responsive design."
+user_problem_statement: "Fix YouTube automation tool dashboard issues: not connecting channel properly, if connected not showing data, if showing data then not showing where to connect another channel or how to disconnect already connected channels."
 
 backend:
   - task: "YouTube Data API Integration - Trending Videos"
