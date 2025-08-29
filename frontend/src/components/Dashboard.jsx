@@ -303,7 +303,7 @@ const Dashboard = () => {
   ] : [];
 
   // No Channel Connected State - only show if we actually have no connected channels
-  if (analytics && !analytics.connected && connectedChannels.length === 0) {
+  if (!shouldShowConnectedState && (!analytics || !analytics.connected)) {
     return (
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
