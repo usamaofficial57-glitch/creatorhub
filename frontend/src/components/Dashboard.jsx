@@ -26,6 +26,9 @@ const Dashboard = () => {
   const [trendingVideos, setTrendingVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showChannelModal, setShowChannelModal] = useState(false);
+  const [channelUrl, setChannelUrl] = useState('');
+  const [connecting, setConnecting] = useState(false);
   const { toast } = useToast();
 
   const fetchDashboardData = async () => {
