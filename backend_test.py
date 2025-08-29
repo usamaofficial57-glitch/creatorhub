@@ -207,6 +207,255 @@ class BackendTester:
                 
         except Exception as e:
             self.log_result("Analytics Dashboard", "FAIL", f"Request error: {str(e)}")
+
+    def test_channel_connection_channel_id(self):
+        """Test channel connection with channel ID format"""
+        try:
+            # Test with Marques Brownlee's channel ID
+            payload = {
+                "channel_id": "UCBJycsmduvYEL83R_U4JriQ"
+            }
+            
+            response = requests.post(f"{BACKEND_URL}/channels/connect", 
+                                   json=payload, timeout=20)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ['id', 'channel_id', 'channel_name', 'subscriber_count', 'view_count', 'video_count']
+                
+                missing_fields = [field for field in required_fields if field not in data]
+                if not missing_fields:
+                    self.log_result("Channel Connection (ID)", "PASS", 
+                                  f"Connected {data['channel_name']} with {data['subscriber_count']} subscribers", 
+                                  {"channel_name": data['channel_name'], "subscribers": data['subscriber_count']})
+                    return data['channel_id']  # Return for cleanup
+                else:
+                    self.log_result("Channel Connection (ID)", "FAIL", 
+                                  f"Missing fields: {missing_fields}")
+            elif response.status_code == 400 and "already connected" in response.text:
+                self.log_result("Channel Connection (ID)", "PASS", 
+                              "Channel already connected (expected behavior)")
+                return "UCBJycsmduvYEL83R_U4JriQ"  # Return for cleanup
+            else:
+                self.log_result("Channel Connection (ID)", "FAIL", 
+                              f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Channel Connection (ID)", "FAIL", f"Request error: {str(e)}")
+        return None
+
+    def test_channel_connection_url_formats(self):
+        """Test channel connection with different URL formats"""
+        try:
+            # Test with channel URL format
+            payload = {
+                "channel_url": "https://www.youtube.com/channel/UCX6OQ3DkcsbYNE6H8uQQuVA"
+            }
+            
+            response = requests.post(f"{BACKEND_URL}/channels/connect", 
+                                   json=payload, timeout=20)
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.log_result("Channel Connection (URL)", "PASS", 
+                              f"Connected {data['channel_name']} via URL format", 
+                              {"channel_name": data['channel_name']})
+                return data['channel_id']
+            elif response.status_code == 400 and "already connected" in response.text:
+                self.log_result("Channel Connection (URL)", "PASS", 
+                              "Channel already connected (expected behavior)")
+                return "UCX6OQ3DkcsbYNE6H8uQQuVA"
+            else:
+                self.log_result("Channel Connection (URL)", "FAIL", 
+                              f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Channel Connection (URL)", "FAIL", f"Request error: {str(e)}")
+        return None
+
+    def test_channel_connection_handle(self):
+        """Test channel connection with handle format"""
+        try:
+            # Test with handle format
+            payload = {
+                "channel_handle": "@MrBeast"
+            }
+            
+            response = requests.post(f"{BACKEND_URL}/channels/connect", 
+                                   json=payload, timeout=20)
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.log_result("Channel Connection (Handle)", "PASS", 
+                              f"Connected {data['channel_name']} via handle format", 
+                              {"channel_name": data['channel_name']})
+                return data['channel_id']
+            elif response.status_code == 400 and "already connected" in response.text:
+                self.log_result("Channel Connection (Handle)", "PASS", 
+                              "Channel already connected (expected behavior)")
+                return "UCX6OQ3DkcsbYNE6H8uQQuVA"  # MrBeast's channel ID
+            else:
+                self.log_result("Channel Connection (Handle)", "FAIL", 
+                              f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Channel Connection (Handle)", "FAIL", f"Request error: {str(e)}")
+        return None
+
+    def test_get_connected_channels(self):
+        """Test getting list of connected channels"""
+        try:
+            response = requests.get(f"{BACKEND_URL}/channels", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    if len(data) > 0:
+                        channel = data[0]
+                        required_fields = ['id', 'channel_id', 'channel_name', 'subscriber_count', 'is_primary']
+                        
+                        missing_fields = [field for field in required_fields if field not in channel]
+                        if not missing_fields:
+                            primary_count = sum(1 for ch in data if ch.get('is_primary', False))
+                            self.log_result("Get Connected Channels", "PASS", 
+                                          f"Retrieved {len(data)} connected channels, {primary_count} primary", 
+                                          {"count": len(data), "primary_count": primary_count})
+                        else:
+                            self.log_result("Get Connected Channels", "FAIL", 
+                                          f"Missing fields: {missing_fields}")
+                    else:
+                        self.log_result("Get Connected Channels", "PASS", 
+                                      "No channels connected (valid state)")
+                else:
+                    self.log_result("Get Connected Channels", "FAIL", 
+                                  "Response is not a list")
+            else:
+                self.log_result("Get Connected Channels", "FAIL", 
+                              f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Get Connected Channels", "FAIL", f"Request error: {str(e)}")
+
+    def test_set_primary_channel(self, channel_id):
+        """Test setting a channel as primary"""
+        if not channel_id:
+            self.log_result("Set Primary Channel", "SKIP", "No channel ID available")
+            return
+            
+        try:
+            response = requests.put(f"{BACKEND_URL}/channels/{channel_id}/primary", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "message" in data and "successfully" in data["message"].lower():
+                    self.log_result("Set Primary Channel", "PASS", 
+                                  f"Successfully set channel as primary: {data['message']}")
+                else:
+                    self.log_result("Set Primary Channel", "FAIL", 
+                                  "Unexpected response format")
+            elif response.status_code == 404:
+                self.log_result("Set Primary Channel", "FAIL", 
+                              "Channel not found")
+            else:
+                self.log_result("Set Primary Channel", "FAIL", 
+                              f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Set Primary Channel", "FAIL", f"Request error: {str(e)}")
+
+    def test_analytics_dashboard_with_connected_channel(self):
+        """Test analytics dashboard with connected channel"""
+        try:
+            response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=25)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get('connected') == True:
+                    # Test with connected channel
+                    required_fields = ['channelInfo', 'totalViews', 'totalSubscribers', 'videoCount', 'monthlyGrowth']
+                    missing_fields = [field for field in required_fields if field not in data]
+                    
+                    if not missing_fields:
+                        channel_info = data.get('channelInfo', {})
+                        if 'name' in channel_info and 'id' in channel_info:
+                            self.log_result("Analytics Dashboard (Connected)", "PASS", 
+                                          f"Real analytics for {channel_info['name']}: {data['totalViews']} views, {data['totalSubscribers']} subscribers", 
+                                          {"channel": channel_info['name'], "views": data['totalViews'], "subscribers": data['totalSubscribers']})
+                        else:
+                            self.log_result("Analytics Dashboard (Connected)", "FAIL", 
+                                          "Missing channel info fields")
+                    else:
+                        self.log_result("Analytics Dashboard (Connected)", "FAIL", 
+                                      f"Missing fields: {missing_fields}")
+                elif data.get('connected') == False:
+                    # Test without connected channel
+                    if 'message' in data and 'no youtube channels connected' in data['message'].lower():
+                        self.log_result("Analytics Dashboard (No Channels)", "PASS", 
+                                      "Correctly returns no channels connected state")
+                    else:
+                        self.log_result("Analytics Dashboard (No Channels)", "FAIL", 
+                                      "Unexpected response for no channels state")
+                else:
+                    self.log_result("Analytics Dashboard (Connected)", "FAIL", 
+                                  "Invalid connected status")
+            else:
+                self.log_result("Analytics Dashboard (Connected)", "FAIL", 
+                              f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Analytics Dashboard (Connected)", "FAIL", f"Request error: {str(e)}")
+
+    def test_channel_connection_error_handling(self):
+        """Test error handling for invalid channel connections"""
+        try:
+            # Test with invalid channel ID
+            payload = {
+                "channel_id": "INVALID_CHANNEL_ID_123"
+            }
+            
+            response = requests.post(f"{BACKEND_URL}/channels/connect", 
+                                   json=payload, timeout=15)
+            
+            if response.status_code == 404:
+                self.log_result("Channel Connection Error Handling", "PASS", 
+                              "Correctly handles invalid channel ID with 404")
+            elif response.status_code == 400:
+                self.log_result("Channel Connection Error Handling", "PASS", 
+                              "Correctly handles invalid channel ID with 400")
+            else:
+                self.log_result("Channel Connection Error Handling", "FAIL", 
+                              f"Unexpected response for invalid channel: {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Channel Connection Error Handling", "FAIL", f"Request error: {str(e)}")
+
+    def test_disconnect_channel(self, channel_id):
+        """Test disconnecting a channel"""
+        if not channel_id:
+            self.log_result("Disconnect Channel", "SKIP", "No channel ID available")
+            return
+            
+        try:
+            response = requests.delete(f"{BACKEND_URL}/channels/{channel_id}", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "message" in data and "disconnected" in data["message"].lower():
+                    self.log_result("Disconnect Channel", "PASS", 
+                                  f"Successfully disconnected channel: {data['message']}")
+                else:
+                    self.log_result("Disconnect Channel", "FAIL", 
+                                  "Unexpected response format")
+            elif response.status_code == 404:
+                self.log_result("Disconnect Channel", "PASS", 
+                              "Channel not found (may have been already disconnected)")
+            else:
+                self.log_result("Disconnect Channel", "FAIL", 
+                              f"HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_result("Disconnect Channel", "FAIL", f"Request error: {str(e)}")
     
     def test_environment_variables(self):
         """Test that required environment variables are configured"""
