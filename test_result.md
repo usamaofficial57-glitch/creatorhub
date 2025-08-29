@@ -474,10 +474,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "YouTube Channel Connection API"
-    - "Connected Channels Management"
-    - "Real Analytics Dashboard with Connected Channels"
-    - "Channel Connection Error Handling"
+    - "Dashboard Channel Connection Bug Investigation"
+    - "Frontend State Management After Channel Connection"
+    - "Enhanced YouTube Channel Connection UI"
+    - "Real Data Display After Connection"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
