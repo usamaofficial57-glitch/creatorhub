@@ -481,8 +481,17 @@ const Dashboard = () => {
               ))
             ) : (
               <div className="text-center text-gray-500 py-8">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                Loading trending videos...
+                {!refreshing && !loading ? (
+                  <div>
+                    <TrendingUp className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                    <p>No trending videos available</p>
+                  </div>
+                ) : (
+                  <div>
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    Loading trending videos...
+                  </div>
+                )}
               </div>
             )}
           </div>
