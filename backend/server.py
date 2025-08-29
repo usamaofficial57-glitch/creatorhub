@@ -96,6 +96,23 @@ class ContentGenerationRequest(BaseModel):
     category: str = "general"
     count: int = 5
 
+class ConnectedChannel(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    channel_id: str
+    channel_name: str
+    channel_handle: Optional[str] = None
+    thumbnail_url: str
+    subscriber_count: int
+    view_count: int
+    video_count: int
+    connected_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    is_primary: bool = False
+
+class ChannelConnectionRequest(BaseModel):
+    channel_id: Optional[str] = None
+    channel_url: Optional[str] = None
+    channel_handle: Optional[str] = None
+
 # YouTube API Helper Functions
 def get_video_duration_seconds(duration):
     """Convert YouTube duration format to seconds"""
