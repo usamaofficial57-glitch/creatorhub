@@ -252,6 +252,9 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
+  // Ensure we show connected state if we have channels, even if analytics is not loaded
+  const shouldShowConnectedState = connectedChannels.length > 0;
+
   if (loading) {
     return (
       <div className="p-6 space-y-6">
