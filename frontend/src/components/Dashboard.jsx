@@ -24,11 +24,13 @@ import { useToast } from '../hooks/use-toast';
 const Dashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [trendingVideos, setTrendingVideos] = useState([]);
+  const [connectedChannels, setConnectedChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showChannelModal, setShowChannelModal] = useState(false);
   const [channelUrl, setChannelUrl] = useState('');
   const [connecting, setConnecting] = useState(false);
+  const [managingChannels, setManagingChannels] = useState(false);
   const { toast } = useToast();
 
   const fetchDashboardData = async () => {
