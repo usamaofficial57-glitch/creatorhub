@@ -12,7 +12,11 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
-  Loader2
+  Loader2,
+  Plus,
+  Settings,
+  ExternalLink,
+  Youtube
 } from 'lucide-react';
 import { analyticsApi, youtubeApi, channelsApi } from '../services/api';
 import { useToast } from '../hooks/use-toast';
