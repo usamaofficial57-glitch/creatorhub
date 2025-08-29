@@ -561,45 +561,61 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Your Channel</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Your Channels ({connectedChannels.length})</h3>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => setShowChannelModal(true)}
             >
-              <Settings className="w-3 h-3 mr-1" />
-              Settings
+              <Plus className="w-3 h-3 mr-1" />
+              Connect New
             </Button>
           </div>
-          <div className="space-y-4">
-            {analytics?.channelInfo ? (
-              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                <img 
-                  src={analytics.channelInfo.thumbnail}
-                  alt={analytics.channelInfo.name}
-                  className="w-12 h-12 rounded-full"
-                />
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{analytics.channelInfo.name}</h4>
-                  <p className="text-sm text-gray-600">
-                    {analytics.channelInfo.handle || analytics.channelInfo.id}
-                  </p>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
-                    <span>{analytics.totalSubscribers?.toLocaleString()} subscribers</span>
-                    <span>{analytics.videoCount} videos</span>
+          <div className="space-y-3">
+            {connectedChannels.length > 0 ? (
+              connectedChannels.map((channel) => (
+                <div key={channel.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <img 
+                    src={channel.thumbnail_url}
+                    alt={channel.channel_name}
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <h4 className="font-medium text-gray-900 text-sm">{channel.channel_name}</h4>
+                      {channel.is_primary && (
+                        <Badge className="text-xs bg-blue-100 text-blue-800 px-2 py-0">Primary</Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600">
+                      {channel.channel_handle || channel.channel_id}
+                    </p>
+                    <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1">
+                      <span>{channel.subscriber_count?.toLocaleString()} subscribers</span>
+                      <span>{channel.video_count} videos</span>
+                    </div>
                   </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.open(`https://youtube.com/channel/${channel.channel_id}`, '_blank')}
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                  </Button>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => window.open(`https://youtube.com/channel/${analytics.channelInfo.id}`, '_blank')}
-                >
-                  <ExternalLink className="w-3 h-3" />
-                </Button>
-              </div>
+              ))
             ) : (
               <div className="text-center text-gray-500 py-8">
-                No channel connected
+                <Youtube className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <p>No channels connected</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => setShowChannelModal(true)}
+                >
+                  Connect Your First Channel
+                </Button>
               </div>
             )}
           </div>
