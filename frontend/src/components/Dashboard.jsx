@@ -671,53 +671,159 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Channel Connection Modal for Settings */}
-      {showChannelModal && analytics?.connected && (
+      {/* Enhanced Channel Management Modal */}
+      {showChannelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Channel Settings</h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                <img 
-                  src={analytics.channelInfo.thumbnail}
-                  alt={analytics.channelInfo.name}
-                  className="w-10 h-10 rounded-full"
-                />
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{analytics.channelInfo.name}</h4>
-                  <p className="text-sm text-gray-600">
-                    {analytics.channelInfo.handle || analytics.channelInfo.id}
-                  </p>
-                </div>
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  Primary
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm text-gray-600 p-3 bg-blue-50 rounded-lg">
-                <span>Last updated:</span>
-                <span>{analytics.lastUpdated ? new Date(analytics.lastUpdated).toLocaleString() : 'Just now'}</span>
-              </div>
-            </div>
-            <div className="flex space-x-3 mt-6">
+          <Card className="p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">Channel Management</h3>
               <Button 
                 variant="outline" 
+                size="sm"
                 onClick={() => setShowChannelModal(false)}
-                className="flex-1"
               >
-                Close
+                ✕
               </Button>
-              <Button 
-                onClick={handleRefresh}
-                className="flex-1"
-                disabled={refreshing}
-              >
-                {refreshing ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 mr-2" />
+            </div>
+
+            {/* Connect New Channel Section */}
+            <div className="border-b border-gray-200 pb-6 mb-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-4">Connect New Channel</h4>
+              <div className="flex space-x-3">
+                <input
+                  type="text"
+                  value={channelUrl}
+                  onChange={(e) => setChannelUrl(e.target.value)}
+                  placeholder="https://youtube.com/@channel or @username or Channel ID"
+                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Button 
+                  onClick={handleConnectChannel}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                  disabled={connecting || !channelUrl.trim()}
+                >
+                  {connecting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4 mr-2" />
+                  )}
+                  Connect
+                </Button>
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Supports: YouTube URLs, channel handles (@username), or channel IDs
+              </p>
+            </div>
+
+            {/* Connected Channels List */}
+            <div>
+              <h4 className="text-lg font-medium text-gray-900 mb-4">
+                Connected Channels ({connectedChannels.length})
+              </h4>
+              {connectedChannels.length > 0 ? (
+                <div className="space-y-4">
+                  {connectedChannels.map((channel) => (
+                    <div key={channel.id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                      <img 
+                        src={channel.thumbnail_url}
+                        alt={channel.channel_name}
+                        className="w-12 h-12 rounded-full"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h5 className="font-medium text-gray-900">{channel.channel_name}</h5>
+                          {channel.is_primary && (
+                            <Badge className="bg-blue-100 text-blue-800 text-xs">Primary</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {channel.channel_handle || channel.channel_id}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
+                          <span>{channel.subscriber_count?.toLocaleString()} subscribers</span>
+                          <span>{channel.video_count} videos</span>
+                          <span>Connected: {new Date(channel.connected_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        {!channel.is_primary && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSetPrimaryChannel(channel.id, channel.channel_name)}
+                            disabled={managingChannels}
+                          >
+                            Set Primary
+                          </Button>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(`https://youtube.com/channel/${channel.channel_id}`, '_blank')}
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDisconnectChannel(channel.id, channel.channel_name)}
+                          disabled={managingChannels}
+                          className="text-red-600 hover:bg-red-50"
+                        >
+                          {managingChannels ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            'Disconnect'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-12">
+                  <Youtube className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <h5 className="font-medium text-gray-900 mb-2">No Channels Connected</h5>
+                  <p className="text-sm">Connect your first YouTube channel using the form above.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+              <div className="text-sm text-gray-500">
+                {connectedChannels.length > 0 && (
+                  <>
+                    Primary channel analytics are displayed on the dashboard.
+                    <br />
+                    You can switch primary channels anytime.
+                  </>
                 )}
-                Refresh Data
-              </Button>
+              </div>
+              <div className="flex space-x-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowChannelModal(false)}
+                >
+                  Close
+                </Button>
+                {connectedChannels.length > 0 && (
+                  <Button 
+                    onClick={() => {
+                      setShowChannelModal(false);
+                      handleRefresh();
+                    }}
+                    disabled={refreshing}
+                  >
+                    {refreshing ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Refresh Dashboard
+                  </Button>
+                )}
+              </div>
             </div>
           </Card>
         </div>
