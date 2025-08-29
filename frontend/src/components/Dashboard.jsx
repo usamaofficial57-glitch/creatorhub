@@ -271,7 +271,7 @@ const Dashboard = () => {
     );
   }
 
-  const stats = analytics && analytics.connected ? [
+  const stats = shouldShowConnectedState && analytics ? [
     {
       label: 'Total Views',
       value: analytics.totalViews?.toLocaleString() || '0',
