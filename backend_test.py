@@ -482,14 +482,42 @@ class BackendTester:
         print(f"Testing against: {BACKEND_URL}")
         print("=" * 60)
         
-        # Run tests in order
+        # Run basic tests first
         self.test_health_check()
         self.test_environment_variables()
         self.test_youtube_trending()
         self.test_youtube_search()
         self.test_youtube_channel_stats()
         self.test_content_generation()
+        
+        # Test analytics dashboard without connected channels first
         self.test_analytics_dashboard()
+        
+        print("\n🔗 Testing YouTube Channel Connection Features")
+        print("-" * 60)
+        
+        # Test channel connection with different formats
+        channel_id_1 = self.test_channel_connection_channel_id()
+        channel_id_2 = self.test_channel_connection_url_formats()
+        channel_id_3 = self.test_channel_connection_handle()
+        
+        # Test channel management
+        self.test_get_connected_channels()
+        
+        # Use the first successfully connected channel for further tests
+        test_channel_id = channel_id_1 or channel_id_2 or channel_id_3
+        
+        if test_channel_id:
+            self.test_set_primary_channel(test_channel_id)
+            
+            # Test analytics dashboard with connected channel
+            self.test_analytics_dashboard_with_connected_channel()
+            
+            # Test disconnection (cleanup)
+            self.test_disconnect_channel(test_channel_id)
+        
+        # Test error handling
+        self.test_channel_connection_error_handling()
         
         # Print summary
         print("\n" + "=" * 60)
