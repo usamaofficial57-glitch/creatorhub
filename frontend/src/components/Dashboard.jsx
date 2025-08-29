@@ -173,13 +173,105 @@ const Dashboard = () => {
     }
   ] : [];
 
+  // No Channel Connected State
+  if (analytics && !analytics.connected) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600 mt-1">Connect your YouTube channel to view real analytics</p>
+          </div>
+        </div>
+
+        {/* No Channel Connected UI */}
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Card className="p-8 text-center max-w-md">
+            <Youtube className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Connect Your YouTube Channel</h3>
+            <p className="text-gray-600 mb-6">
+              {analytics.message || "To view your real YouTube analytics, please connect your channel first."}
+            </p>
+            <Button 
+              onClick={() => setShowChannelModal(true)}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Connect Channel
+            </Button>
+          </Card>
+        </div>
+
+        {/* Channel Connection Modal */}
+        {showChannelModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold mb-4">Connect YouTube Channel</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Enter your YouTube channel URL or handle (e.g., @username)
+              </p>
+              <input
+                type="text"
+                value={channelUrl}
+                onChange={(e) => setChannelUrl(e.target.value)}
+                placeholder="https://youtube.com/@channel or @username"
+                className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex space-x-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowChannelModal(false)}
+                  className="flex-1"
+                  disabled={connecting}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleConnectChannel}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                  disabled={connecting}
+                >
+                  {connecting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4 mr-2" />
+                  )}
+                  Connect
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {/* Header with Channel Info */}
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back! Here's your channel overview with live data.</p>
+        <div className="flex items-center space-x-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <div className="flex items-center space-x-2 mt-1">
+              <p className="text-gray-600">
+                {analytics?.channelInfo ? `Analytics for ${analytics.channelInfo.name}` : "Welcome back! Here's your channel overview with live data."}
+              </p>
+              {analytics?.channelInfo && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                  Connected
+                </Badge>
+              )}
+            </div>
+          </div>
+          {analytics?.channelInfo && (
+            <img 
+              src={analytics.channelInfo.thumbnail}
+              alt={analytics.channelInfo.name}
+              className="w-12 h-12 rounded-full"
+            />
+          )}
         </div>
         <div className="flex space-x-3">
           <Button 
