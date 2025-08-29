@@ -14,7 +14,7 @@ import {
   RefreshCw,
   Loader2
 } from 'lucide-react';
-import { analyticsApi, youtubeApi } from '../services/api';
+import { analyticsApi, youtubeApi, channelsApi } from '../services/api';
 import { useToast } from '../hooks/use-toast';
 
 const Dashboard = () => {
