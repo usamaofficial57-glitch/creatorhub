@@ -486,12 +486,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Dashboard Channel Connection Bug Investigation"
-    - "Frontend State Management After Channel Connection"
-    - "Enhanced YouTube Channel Connection UI"
-    - "Real Data Display After Connection"
+    - "Enhanced Multi-Channel Management Dashboard"
+    - "Channel Connection/Disconnection Functionality"  
+    - "Multi-Channel State Management"
+    - "Channel Management Modal Functionality"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
