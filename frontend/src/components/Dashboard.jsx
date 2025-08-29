@@ -48,24 +48,15 @@ const Dashboard = () => {
       console.error('Error fetching dashboard data:', error);
       toast({
         title: "Error",
-        description: "Failed to load dashboard data. Using cached data.",
+        description: "Failed to load dashboard data.",
         variant: "destructive",
       });
       
-      // Fallback to sample data
+      // Set analytics to indicate error state
       setAnalytics({
-        totalViews: 45600000,
-        totalSubscribers: 567000,
-        avgViewDuration: "4:32",
-        revenueThisMonth: 15600,
-        monthlyGrowth: [
-          { month: 'Aug', subscribers: 12000, views: 890000 },
-          { month: 'Sep', subscribers: 18000, views: 1200000 },
-          { month: 'Oct', subscribers: 22000, views: 1450000 },
-          { month: 'Nov', subscribers: 28000, views: 1800000 },
-          { month: 'Dec', subscribers: 32000, views: 2100000 },
-          { month: 'Jan', subscribers: 35000, views: 2350000 }
-        ]
+        connected: false,
+        message: "Failed to load data. Please refresh or check your connection.",
+        error: error.message
       });
       
     } finally {
