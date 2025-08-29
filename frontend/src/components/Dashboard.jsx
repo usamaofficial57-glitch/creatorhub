@@ -284,68 +284,95 @@ const Dashboard = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">Connect your YouTube channel to view real analytics</p>
+            <p className="text-gray-600 mt-1">Connect your YouTube channels to view real analytics and insights</p>
           </div>
+          <Button 
+            onClick={() => setShowChannelModal(true)}
+            className="bg-red-500 hover:bg-red-600 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Connect Channel
+          </Button>
         </div>
 
         {/* No Channel Connected UI */}
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Card className="p-8 text-center max-w-md">
-            <Youtube className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Connect Your YouTube Channel</h3>
-            <p className="text-gray-600 mb-6">
-              {analytics.message || "To view your real YouTube analytics, please connect your channel first."}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+          {/* Welcome Card */}
+          <Card className="p-8 text-center">
+            <Youtube className="w-16 h-16 text-red-500 mx-auto mb-6" />
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">Welcome to CreatorHub!</h3>
+            <p className="text-gray-600 mb-6 leading-relaxed">
+              Connect your YouTube channels to unlock powerful analytics, content insights, 
+              and growth tools designed specifically for creators.
             </p>
             <Button 
               onClick={() => setShowChannelModal(true)}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-red-500 hover:bg-red-600 text-white w-full"
+              size="lg"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Connect Channel
+              <Plus className="w-5 h-5 mr-2" />
+              Connect Your First Channel
             </Button>
+          </Card>
+
+          {/* Features Preview */}
+          <Card className="p-8">
+            <h4 className="text-xl font-semibold text-gray-900 mb-6">What you'll get:</h4>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <div>
+                  <h5 className="font-medium text-gray-900">Real-time Analytics</h5>
+                  <p className="text-sm text-gray-600">View counts, subscribers, engagement metrics</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                <div>
+                  <h5 className="font-medium text-gray-900">AI Content Ideas</h5>
+                  <p className="text-sm text-gray-600">Get AI-powered video ideas based on trends</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                <div>
+                  <h5 className="font-medium text-gray-900">Competitor Analysis</h5>
+                  <p className="text-sm text-gray-600">Track and analyze competitor performance</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                <div>
+                  <h5 className="font-medium text-gray-900">Multi-Channel Support</h5>
+                  <p className="text-sm text-gray-600">Manage multiple channels from one dashboard</p>
+                </div>
+              </div>
+            </div>
           </Card>
         </div>
 
-        {/* Channel Connection Modal */}
-        {showChannelModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="p-6 w-full max-w-md">
-              <h3 className="text-lg font-semibold mb-4">Connect YouTube Channel</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Enter your YouTube channel URL or handle (e.g., @username)
-              </p>
-              <input
-                type="text"
-                value={channelUrl}
-                onChange={(e) => setChannelUrl(e.target.value)}
-                placeholder="https://youtube.com/@channel or @username"
-                className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex space-x-3">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowChannelModal(false)}
-                  className="flex-1"
-                  disabled={connecting}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleConnectChannel}
-                  className="flex-1 bg-red-500 hover:bg-red-600 text-white"
-                  disabled={connecting}
-                >
-                  {connecting ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Plus className="w-4 h-4 mr-2" />
-                  )}
-                  Connect
-                </Button>
+        {analytics.error && (
+          <Card className="p-6 border-orange-200 bg-orange-50">
+            <div className="flex items-center space-x-3">
+              <RefreshCw className="w-5 h-5 text-orange-500" />
+              <div>
+                <h4 className="font-medium text-orange-800">Connection Issue</h4>
+                <p className="text-sm text-orange-700">{analytics.message}</p>
               </div>
-            </Card>
-          </div>
+              <Button 
+                onClick={handleRefresh}
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                disabled={refreshing}
+              >
+                Try Again
+              </Button>
+            </div>
+          </Card>
         )}
+
+        {/* Enhanced Channel Management Modal (reused from connected state) */}
       </div>
     );
   }
