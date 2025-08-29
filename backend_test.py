@@ -645,7 +645,12 @@ class BackendTester:
 
 if __name__ == "__main__":
     tester = BackendTester()
-    results = tester.run_all_tests()
+    
+    # Check if we should run focused tests
+    if len(sys.argv) > 1 and sys.argv[1] == "--focused":
+        results = tester.run_focused_tests()
+    else:
+        results = tester.run_all_tests()
     
     # Exit with error code if tests failed
     sys.exit(0 if tester.failed_tests == 0 else 1)
