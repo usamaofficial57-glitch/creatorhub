@@ -399,10 +399,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "YouTube Data API Integration - Trending Videos"
-    - "YouTube Data API Integration - Video Search"
-    - "YouTube Data API Integration - Channel Statistics"
-    - "OpenAI Content Generation Integration"
+    - "YouTube Channel Connection API"
+    - "Connected Channels Management"
+    - "Real Analytics Dashboard with Connected Channels"
+    - "Channel Connection Error Handling"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
