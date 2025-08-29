@@ -349,6 +349,39 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Analytics Error Banner */}
+      {analytics?.connected && analytics?.error && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <RefreshCw className="w-5 h-5 text-orange-500" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-orange-800">
+                Analytics data temporarily unavailable
+              </p>
+              <p className="text-sm text-orange-700 mt-1">
+                Your channel is connected, but we're having trouble loading analytics data. This may be due to temporary network issues.
+              </p>
+            </div>
+            <Button 
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+              className="border-orange-200 text-orange-700 hover:bg-orange-100"
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Retry
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => {
