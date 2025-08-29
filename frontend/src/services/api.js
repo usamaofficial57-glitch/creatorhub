@@ -66,6 +66,33 @@ export const analyticsApi = {
   },
 };
 
+// Channel management API
+export const channelsApi = {
+  // Connect a YouTube channel
+  connectChannel: async (channelData) => {
+    const response = await api.post('/api/channels/connect', channelData);
+    return response.data;
+  },
+
+  // Get all connected channels
+  getConnectedChannels: async () => {
+    const response = await api.get('/api/channels');
+    return response.data;
+  },
+
+  // Set primary channel
+  setPrimaryChannel: async (channelId) => {
+    const response = await api.put(`/api/channels/${channelId}/primary`);
+    return response.data;
+  },
+
+  // Disconnect a channel
+  disconnectChannel: async (channelId) => {
+    const response = await api.delete(`/api/channels/${channelId}`);
+    return response.data;
+  },
+};
+
 // Status API (existing)
 export const statusApi = {
   getStatus: async () => {
