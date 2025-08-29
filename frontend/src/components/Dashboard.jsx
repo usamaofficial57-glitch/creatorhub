@@ -303,12 +303,18 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             <div className="flex items-center space-x-2 mt-1">
               <p className="text-gray-600">
-                {analytics?.channelInfo ? `Analytics for ${analytics.channelInfo.name}` : "Welcome back! Here's your channel overview with live data."}
+                {analytics?.channelInfo ? 
+                  (analytics.error ? 
+                    `Channel: ${analytics.channelInfo.name} (Analytics unavailable)` : 
+                    `Analytics for ${analytics.channelInfo.name}`
+                  ) : 
+                  "Welcome back! Here's your channel overview with live data."
+                }
               </p>
               {analytics?.channelInfo && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-                  Connected
+                <Badge variant="outline" className={analytics.error ? "bg-orange-50 text-orange-700 border-orange-200" : "bg-green-50 text-green-700 border-green-200"}>
+                  <div className={`w-2 h-2 ${analytics.error ? 'bg-orange-500' : 'bg-green-500'} rounded-full mr-1`}></div>
+                  {analytics.error ? 'Data Error' : 'Connected'}
                 </Badge>
               )}
             </div>
