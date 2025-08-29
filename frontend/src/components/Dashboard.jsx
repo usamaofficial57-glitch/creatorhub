@@ -271,31 +271,31 @@ const Dashboard = () => {
     );
   }
 
-  const stats = shouldShowConnectedState && analytics ? [
+  const stats = shouldShowConnectedState && effectiveAnalytics ? [
     {
       label: 'Total Views',
-      value: analytics.totalViews?.toLocaleString() || '0',
+      value: effectiveAnalytics.totalViews?.toLocaleString() || '0',
       change: '+12.5%',
       positive: true,
       icon: Eye
     },
     {
       label: 'Subscribers',
-      value: analytics.totalSubscribers?.toLocaleString() || '0',
+      value: effectiveAnalytics.totalSubscribers?.toLocaleString() || '0',
       change: '+8.2%',
       positive: true,
       icon: Users
     },
     {
       label: 'Videos',
-      value: analytics.videoCount?.toLocaleString() || '0',
+      value: effectiveAnalytics.videoCount?.toLocaleString() || '0',
       change: '+5.1%',
       positive: true,
       icon: Play
     },
     {
       label: 'Monthly Revenue',
-      value: `$${analytics.revenueThisMonth?.toLocaleString() || '0'}`,
+      value: `$${effectiveAnalytics.revenueThisMonth?.toLocaleString() || '0'}`,
       change: '+15.7%',
       positive: true,
       icon: DollarSign
