@@ -404,13 +404,47 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Your Channels</h3>
-            <Button variant="outline" size="sm">View All</Button>
+            <h3 className="text-lg font-semibold text-gray-900">Your Channel</h3>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowChannelModal(true)}
+            >
+              <Settings className="w-3 h-3 mr-1" />
+              Settings
+            </Button>
           </div>
           <div className="space-y-4">
-            <div className="text-center text-gray-500 py-8">
-              Connect your channels to see analytics
-            </div>
+            {analytics?.channelInfo ? (
+              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                <img 
+                  src={analytics.channelInfo.thumbnail}
+                  alt={analytics.channelInfo.name}
+                  className="w-12 h-12 rounded-full"
+                />
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">{analytics.channelInfo.name}</h4>
+                  <p className="text-sm text-gray-600">
+                    {analytics.channelInfo.handle || analytics.channelInfo.id}
+                  </p>
+                  <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                    <span>{analytics.totalSubscribers?.toLocaleString()} subscribers</span>
+                    <span>{analytics.videoCount} videos</span>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open(`https://youtube.com/channel/${analytics.channelInfo.id}`, '_blank')}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center text-gray-500 py-8">
+                No channel connected
+              </div>
+            )}
           </div>
         </Card>
 
