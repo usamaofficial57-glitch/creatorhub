@@ -497,6 +497,58 @@ const Dashboard = () => {
           </div>
         </Card>
       </div>
+
+      {/* Channel Connection Modal for Settings */}
+      {showChannelModal && analytics?.connected && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Channel Settings</h3>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                <img 
+                  src={analytics.channelInfo.thumbnail}
+                  alt={analytics.channelInfo.name}
+                  className="w-10 h-10 rounded-full"
+                />
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">{analytics.channelInfo.name}</h4>
+                  <p className="text-sm text-gray-600">
+                    {analytics.channelInfo.handle || analytics.channelInfo.id}
+                  </p>
+                </div>
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Primary
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-sm text-gray-600 p-3 bg-blue-50 rounded-lg">
+                <span>Last updated:</span>
+                <span>{analytics.lastUpdated ? new Date(analytics.lastUpdated).toLocaleString() : 'Just now'}</span>
+              </div>
+            </div>
+            <div className="flex space-x-3 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowChannelModal(false)}
+                className="flex-1"
+              >
+                Close
+              </Button>
+              <Button 
+                onClick={handleRefresh}
+                className="flex-1"
+                disabled={refreshing}
+              >
+                {refreshing ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Refresh Data
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
