@@ -83,6 +83,45 @@ const Dashboard = () => {
     window.location.href = '/content-ideas';
   };
 
+  const handleConnectChannel = async () => {
+    if (!channelUrl.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid YouTube channel URL or handle.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      await channelsApi.connectChannel({
+        channel_url: channelUrl.trim()
+      });
+
+      toast({
+        title: "Channel Connected!",
+        description: "Your YouTube channel has been connected successfully.",
+      });
+
+      setShowChannelModal(false);
+      setChannelUrl('');
+      
+      // Refresh dashboard data
+      await fetchDashboardData();
+      
+    } catch (error) {
+      console.error('Error connecting channel:', error);
+      toast({
+        title: "Connection Failed",
+        description: error.response?.data?.detail || "Failed to connect channel. Please check the URL and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setConnecting(false);
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
