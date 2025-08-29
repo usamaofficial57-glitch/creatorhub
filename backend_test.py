@@ -476,6 +476,112 @@ class BackendTester:
         except Exception as e:
             self.log_result("Environment Variables", "FAIL", f"Request error: {str(e)}")
     
+    def test_database_state_check(self):
+        """Check current database state for connected channels"""
+        try:
+            response = requests.get(f"{BACKEND_URL}/channels", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    primary_channels = [ch for ch in data if ch.get('is_primary', False)]
+                    self.log_result("Database State Check", "PASS", 
+                                  f"Found {len(data)} connected channels, {len(primary_channels)} primary", 
+                                  {"total_channels": len(data), "primary_channels": len(primary_channels), "channels": data})
+                    return data
+                else:
+                    self.log_result("Database State Check", "FAIL", "Invalid response format")
+            else:
+                self.log_result("Database State Check", "FAIL", f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_result("Database State Check", "FAIL", f"Request error: {str(e)}")
+        return []
+
+    def test_dashboard_with_no_channels(self):
+        """Test dashboard behavior when no channels are connected"""
+        try:
+            response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=20)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('connected') == False:
+                    self.log_result("Dashboard No Channels", "PASS", 
+                                  f"Dashboard correctly shows no channels: {data.get('message', 'No message')}", 
+                                  data)
+                elif data.get('connected') == True:
+                    self.log_result("Dashboard No Channels", "INFO", 
+                                  f"Dashboard shows connected channel: {data.get('channelInfo', {}).get('name', 'Unknown')}", 
+                                  data)
+                else:
+                    self.log_result("Dashboard No Channels", "FAIL", 
+                                  f"Unexpected connected status: {data.get('connected')}")
+            else:
+                self.log_result("Dashboard No Channels", "FAIL", 
+                              f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            self.log_result("Dashboard No Channels", "FAIL", f"Request error: {str(e)}")
+
+    def run_focused_tests(self):
+        """Run focused tests for the review request issues"""
+        print("🎯 FOCUSED TESTING: YouTube Channel Connection & Dashboard Analytics")
+        print(f"Testing against: {BACKEND_URL}")
+        print("=" * 80)
+        
+        # 1. Check current database state
+        print("\n1️⃣ Checking current database state...")
+        existing_channels = self.test_database_state_check()
+        
+        # 2. Test dashboard with current state
+        print("\n2️⃣ Testing dashboard with current state...")
+        self.test_dashboard_with_no_channels()
+        
+        # 3. Test connecting new channels
+        print("\n3️⃣ Testing channel connection...")
+        channel_id_1 = self.test_channel_connection_channel_id()  # Marques Brownlee
+        channel_id_2 = self.test_channel_connection_url_formats()  # MrBeast
+        
+        # 4. Test listing channels after connection
+        print("\n4️⃣ Testing channel listing after connections...")
+        self.test_get_connected_channels()
+        
+        # 5. Test setting primary channel
+        test_channel_id = channel_id_1 or channel_id_2
+        if test_channel_id:
+            print("\n5️⃣ Testing primary channel setting...")
+            self.test_set_primary_channel(test_channel_id)
+            
+            # 6. Test dashboard with connected channel
+            print("\n6️⃣ Testing dashboard with connected channel...")
+            self.test_analytics_dashboard_with_connected_channel()
+        
+        # 7. Test basic API functionality
+        print("\n7️⃣ Testing basic API functionality...")
+        self.test_health_check()
+        self.test_youtube_channel_stats()
+        
+        # Print focused summary
+        print("\n" + "=" * 80)
+        print("🎯 FOCUSED TEST SUMMARY")
+        print("=" * 80)
+        print(f"Total Tests: {self.total_tests}")
+        print(f"Passed: {self.passed_tests}")
+        print(f"Failed: {self.failed_tests}")
+        print(f"Success Rate: {(self.passed_tests/self.total_tests)*100:.1f}%")
+        
+        # Print detailed results
+        if self.failed_tests > 0:
+            print("\n❌ FAILED TESTS:")
+            for result in self.results:
+                if result['status'] == 'FAIL':
+                    print(f"  - {result['test']}: {result['message']}")
+        
+        print("\n✅ PASSED TESTS:")
+        for result in self.results:
+            if result['status'] == 'PASS':
+                print(f"  - {result['test']}: {result['message']}")
+        
+        return self.results
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting CreatorHub Backend API Tests")
