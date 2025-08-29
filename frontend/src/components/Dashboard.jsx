@@ -46,18 +46,66 @@ const Dashboard = () => {
       
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard data.",
-        variant: "destructive",
-      });
       
-      // Set analytics to indicate error state
-      setAnalytics({
-        connected: false,
-        message: "Failed to load data. Please refresh or check your connection.",
-        error: error.message
-      });
+      // Before showing error state, check if we have connected channels
+      try {
+        const connectedChannels = await channelsApi.getConnectedChannels();
+        const primaryChannel = connectedChannels.find(ch => ch.is_primary);
+        
+        if (primaryChannel) {
+          // We have connected channels, show error state with channel info
+          setAnalytics({
+            connected: true,
+            channelInfo: {
+              name: primaryChannel.channel_name,
+              id: primaryChannel.channel_id,
+              handle: primaryChannel.channel_handle,
+              thumbnail: primaryChannel.thumbnail_url
+            },
+            message: "Unable to load analytics data. Please try refreshing.",
+            error: true,
+            totalViews: 0,
+            totalSubscribers: primaryChannel.subscriber_count || 0,
+            videoCount: primaryChannel.video_count || 0,
+            revenueThisMonth: 0,
+            topPerformingVideo: null,
+            monthlyGrowth: []
+          });
+          
+          toast({
+            title: "Analytics Unavailable",
+            description: "Connected channel found but analytics data couldn't be loaded. Try refreshing.",
+            variant: "destructive",
+          });
+        } else {
+          // No channels connected, show connect state
+          setAnalytics({
+            connected: false,
+            message: "No YouTube channels connected. Please connect a channel to view analytics.",
+            error: error.message
+          });
+          
+          toast({
+            title: "Error",
+            description: "Failed to load dashboard data.",
+            variant: "destructive",
+          });
+        }
+      } catch (channelError) {
+        console.error('Error checking connected channels:', channelError);
+        // Fallback to error state
+        setAnalytics({
+          connected: false,
+          message: "Failed to load data. Please refresh or check your connection.",
+          error: error.message
+        });
+        
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data.",
+          variant: "destructive",
+        });
+      }
       
     } finally {
       setLoading(false);
