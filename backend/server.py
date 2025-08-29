@@ -455,79 +455,296 @@ Make sure the titles are attention-grabbing and follow successful YouTube patter
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to generate content ideas: {str(e)}")
 
+# Channel management endpoints
+@api_router.post("/channels/connect", response_model=ConnectedChannel)
+async def connect_channel(request: ChannelConnectionRequest):
+    """Connect a YouTube channel to the dashboard"""
+    try:
+        channel_id = None
+        
+        # Extract channel ID from different formats
+        if request.channel_id:
+            channel_id = request.channel_id
+        elif request.channel_url:
+            # Extract channel ID from URL (handles different YouTube URL formats)
+            if '/channel/' in request.channel_url:
+                channel_id = request.channel_url.split('/channel/')[-1].split('?')[0]
+            elif '/c/' in request.channel_url or '/@' in request.channel_url:
+                # For custom URLs, we need to search by name
+                custom_name = request.channel_url.split('/')[-1].replace('@', '')
+                search_request = youtube.search().list(
+                    part="snippet",
+                    q=custom_name,
+                    type="channel",
+                    maxResults=1
+                )
+                search_response = search_request.execute()
+                if search_response.get('items'):
+                    channel_id = search_response['items'][0]['snippet']['channelId']
+        elif request.channel_handle:
+            # Search by handle
+            search_request = youtube.search().list(
+                part="snippet",
+                q=request.channel_handle,
+                type="channel",
+                maxResults=1
+            )
+            search_response = search_request.execute()
+            if search_response.get('items'):
+                channel_id = search_response['items'][0]['snippet']['channelId']
+        
+        if not channel_id:
+            raise HTTPException(status_code=400, detail="Could not extract channel ID from provided information")
+        
+        # Get channel details
+        channel_request = youtube.channels().list(
+            part="snippet,statistics",
+            id=channel_id
+        )
+        
+        channel_response = channel_request.execute()
+        
+        if not channel_response.get('items'):
+            raise HTTPException(status_code=404, detail="Channel not found")
+        
+        channel_data = channel_response['items'][0]
+        snippet = channel_data['snippet']
+        statistics = channel_data['statistics']
+        
+        # Check if channel is already connected
+        existing_channel = await db.connected_channels.find_one({"channel_id": channel_id})
+        
+        if existing_channel:
+            raise HTTPException(status_code=400, detail="Channel is already connected")
+        
+        # Create connected channel record
+        connected_channel = ConnectedChannel(
+            channel_id=channel_id,
+            channel_name=snippet['title'],
+            channel_handle=snippet.get('customUrl', '').replace('c/', '@') if snippet.get('customUrl') else None,
+            thumbnail_url=snippet['thumbnails']['medium']['url'],
+            subscriber_count=int(statistics.get('subscriberCount', 0)),
+            view_count=int(statistics.get('viewCount', 0)),
+            video_count=int(statistics.get('videoCount', 0)),
+            is_primary=True  # Set as primary if it's the first channel
+        )
+        
+        # Check if there are other channels - if not, this becomes primary
+        existing_channels = await db.connected_channels.find().to_list(10)
+        if existing_channels:
+            connected_channel.is_primary = False
+        
+        # Store in database
+        await db.connected_channels.insert_one(connected_channel.dict())
+        
+        return connected_channel
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error connecting channel: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to connect channel: {str(e)}")
+
+@api_router.get("/channels", response_model=List[ConnectedChannel])
+async def get_connected_channels():
+    """Get all connected YouTube channels"""
+    try:
+        channels = await db.connected_channels.find().to_list(100)
+        return [ConnectedChannel(**channel) for channel in channels]
+    except Exception as e:
+        logger.error(f"Error fetching connected channels: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch connected channels")
+
+@api_router.put("/channels/{channel_id}/primary")
+async def set_primary_channel(channel_id: str):
+    """Set a channel as the primary channel for dashboard"""
+    try:
+        # Remove primary status from all channels
+        await db.connected_channels.update_many({}, {"$set": {"is_primary": False}})
+        
+        # Set the selected channel as primary
+        result = await db.connected_channels.update_one(
+            {"channel_id": channel_id},
+            {"$set": {"is_primary": True}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Channel not found")
+        
+        return {"message": "Primary channel updated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error setting primary channel: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update primary channel")
+
+@api_router.delete("/channels/{channel_id}")
+async def disconnect_channel(channel_id: str):
+    """Disconnect a YouTube channel"""
+    try:
+        result = await db.connected_channels.delete_one({"channel_id": channel_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Channel not found")
+        
+        return {"message": "Channel disconnected successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error disconnecting channel: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to disconnect channel")
+
 @api_router.get("/analytics/dashboard")
 async def get_dashboard_analytics():
-    """Get dashboard analytics data combining YouTube and stored data"""
+    """Get dashboard analytics data from connected YouTube channel"""
     try:
-        # This could be enhanced to fetch real user's channel data
-        # For now, we'll provide aggregated trending data
+        # Get the primary connected channel
+        primary_channel = await db.connected_channels.find_one({"is_primary": True})
         
-        # Get some trending videos for analysis
-        trending_request = youtube.videos().list(
+        if not primary_channel:
+            # Return empty state if no channels are connected
+            return {
+                "connected": False,
+                "message": "No YouTube channels connected. Please connect a channel to view analytics.",
+                "totalViews": 0,
+                "totalSubscribers": 0,
+                "avgViewDuration": "0:00",
+                "revenueThisMonth": 0,
+                "channelInfo": None,
+                "topPerformingVideo": None,
+                "monthlyGrowth": []
+            }
+        
+        channel_id = primary_channel['channel_id']
+        
+        # Fetch updated channel statistics
+        channel_request = youtube.channels().list(
             part="snippet,statistics",
-            chart="mostPopular",
-            regionCode="US",
+            id=channel_id
+        )
+        
+        channel_response = channel_request.execute()
+        
+        if not channel_response.get('items'):
+            return {
+                "connected": False,
+                "message": "Connected channel not found. Please reconnect your channel.",
+                "error": "Channel not accessible"
+            }
+        
+        channel_data = channel_response['items'][0]
+        snippet = channel_data['snippet']
+        statistics = channel_data['statistics']
+        
+        # Get channel's recent videos for analysis
+        videos_request = youtube.search().list(
+            part="snippet",
+            channelId=channel_id,
+            type="video",
+            order="date",
             maxResults=10
         )
         
-        trending_response = trending_request.execute()
+        videos_response = videos_request.execute()
+        video_ids = [item['id']['videoId'] for item in videos_response.get('items', [])]
         
-        total_views = 0
-        total_videos = len(trending_response.get('items', []))
+        top_performing_video = None
+        total_video_views = 0
+        video_count = len(video_ids)
         
-        for item in trending_response.get('items', []):
-            total_views += int(item['statistics'].get('viewCount', 0))
+        if video_ids:
+            # Get detailed video statistics
+            videos_detail_request = youtube.videos().list(
+                part="snippet,statistics,contentDetails",
+                id=','.join(video_ids[:5])  # Analyze top 5 recent videos
+            )
+            
+            videos_detail_response = videos_detail_request.execute()
+            
+            max_views = 0
+            for video in videos_detail_response.get('items', []):
+                video_views = int(video['statistics'].get('viewCount', 0))
+                total_video_views += video_views
+                
+                if video_views > max_views:
+                    max_views = video_views
+                    top_performing_video = {
+                        "title": video['snippet']['title'],
+                        "views": video_views,
+                        "thumbnail": video['snippet']['thumbnails']['medium']['url']
+                    }
         
-        avg_views = total_views // total_videos if total_videos > 0 else 0
+        # Calculate estimated revenue (simplified calculation)
+        total_views = int(statistics.get('viewCount', 0))
+        estimated_monthly_revenue = max(100, min(50000, total_views // 10000))  # Very rough estimate
         
-        # Generate mock analytics with real trending data influence
+        # Simulated monthly growth data (in real implementation, this would come from YouTube Analytics API)
+        monthly_growth = [
+            {"month": "Aug", "subscribers": int(statistics.get('subscriberCount', 0)) - 50000, "views": total_views - 5000000},
+            {"month": "Sep", "subscribers": int(statistics.get('subscriberCount', 0)) - 40000, "views": total_views - 4000000},
+            {"month": "Oct", "subscribers": int(statistics.get('subscriberCount', 0)) - 30000, "views": total_views - 3000000},
+            {"month": "Nov", "subscribers": int(statistics.get('subscriberCount', 0)) - 20000, "views": total_views - 2000000},
+            {"month": "Dec", "subscribers": int(statistics.get('subscriberCount', 0)) - 10000, "views": total_views - 1000000},
+            {"month": "Jan", "subscribers": int(statistics.get('subscriberCount', 0)), "views": total_views}
+        ]
+        
+        # Ensure all values are positive
+        for item in monthly_growth:
+            item['subscribers'] = max(0, item['subscribers'])
+            item['views'] = max(0, item['views'])
+        
         analytics = {
-            "totalViews": avg_views * 45,  # Simulate user having 45 videos
-            "totalSubscribers": min(567000, avg_views // 100),  # Realistic subscriber count
-            "avgViewDuration": "4:32",
+            "connected": True,
+            "channelInfo": {
+                "name": snippet['title'],
+                "id": channel_id,
+                "handle": primary_channel.get('channel_handle'),
+                "thumbnail": snippet['thumbnails']['medium']['url'],
+                "description": snippet.get('description', '')[:200] + "..." if snippet.get('description') else ""
+            },
+            "totalViews": int(statistics.get('viewCount', 0)),
+            "totalSubscribers": int(statistics.get('subscriberCount', 0)),
+            "videoCount": int(statistics.get('videoCount', 0)),
+            "avgViewDuration": "4:32",  # This would require YouTube Analytics API
             "clickThroughRate": 12.8,
             "engagementRate": 8.5,
-            "revenueThisMonth": min(15600, avg_views // 1000),
-            "topPerformingVideo": {
-                "title": trending_response['items'][0]['snippet']['title'] if trending_response.get('items') else "Top Video",
-                "views": trending_response['items'][0]['statistics'].get('viewCount', '0') if trending_response.get('items') else 0,
-                "thumbnail": trending_response['items'][0]['snippet']['thumbnails']['medium']['url'] if trending_response.get('items') else ""
-            },
-            "monthlyGrowth": [
-                {"month": "Aug", "subscribers": 12000, "views": 890000},
-                {"month": "Sep", "subscribers": 18000, "views": 1200000},
-                {"month": "Oct", "subscribers": 22000, "views": 1450000},
-                {"month": "Nov", "subscribers": 28000, "views": 1800000},
-                {"month": "Dec", "subscribers": 32000, "views": 2100000},
-                {"month": "Jan", "subscribers": 35000, "views": 2350000}
-            ]
+            "revenueThisMonth": estimated_monthly_revenue,
+            "topPerformingVideo": top_performing_video,
+            "monthlyGrowth": monthly_growth,
+            "lastUpdated": datetime.utcnow().isoformat()
         }
+        
+        # Update the stored channel data
+        await db.connected_channels.update_one(
+            {"channel_id": channel_id},
+            {"$set": {
+                "subscriber_count": int(statistics.get('subscriberCount', 0)),
+                "view_count": int(statistics.get('viewCount', 0)),
+                "video_count": int(statistics.get('videoCount', 0))
+            }}
+        )
         
         return analytics
         
     except Exception as e:
         logger.error(f"Error fetching dashboard analytics: {str(e)}")
-        # Return fallback data
+        logger.error(traceback.format_exc())
+        
+        # Return fallback data with error info
         return {
-            "totalViews": 45600000,
-            "totalSubscribers": 567000,
-            "avgViewDuration": "4:32",
-            "clickThroughRate": 12.8,
-            "engagementRate": 8.5,
-            "revenueThisMonth": 15600,
-            "topPerformingVideo": {
-                "title": "My Best Gaming Setup Under $500",
-                "views": 2100000,
-                "thumbnail": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=120&fit=crop"
-            },
-            "monthlyGrowth": [
-                {"month": "Aug", "subscribers": 12000, "views": 890000},
-                {"month": "Sep", "subscribers": 18000, "views": 1200000},
-                {"month": "Oct", "subscribers": 22000, "views": 1450000},
-                {"month": "Nov", "subscribers": 28000, "views": 1800000},
-                {"month": "Dec", "subscribers": 32000, "views": 2100000},
-                {"month": "Jan", "subscribers": 35000, "views": 2350000}
-            ]
+            "connected": False,
+            "message": "Error loading analytics data. Please try refreshing or reconnect your channel.",
+            "error": str(e),
+            "totalViews": 0,
+            "totalSubscribers": 0,
+            "avgViewDuration": "0:00",
+            "revenueThisMonth": 0,
+            "channelInfo": None,
+            "topPerformingVideo": None,
+            "monthlyGrowth": []
         }
 
 # Include the router in the main app
