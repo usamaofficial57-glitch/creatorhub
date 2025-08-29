@@ -402,6 +402,28 @@ const Dashboard = () => {
     );
   }
 
+  // If we have connected channels but no analytics yet, create a fallback analytics object
+  if (shouldShowConnectedState && !analytics) {
+    const primaryChannel = connectedChannels.find(ch => ch.is_primary) || connectedChannels[0];
+    setAnalytics({
+      connected: true,
+      channelInfo: primaryChannel ? {
+        name: primaryChannel.channel_name,
+        id: primaryChannel.channel_id,
+        handle: primaryChannel.channel_handle,
+        thumbnail: primaryChannel.thumbnail_url
+      } : null,
+      message: "Loading analytics data...",
+      error: false,
+      totalViews: primaryChannel?.total_views || 0,
+      totalSubscribers: primaryChannel?.subscriber_count || 0,
+      videoCount: primaryChannel?.video_count || 0,
+      revenueThisMonth: 0,
+      topPerformingVideo: null,
+      monthlyGrowth: []
+    });
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header with Channel Info */}
