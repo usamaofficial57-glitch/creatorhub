@@ -359,19 +359,26 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             <div className="flex items-center space-x-2 mt-1">
               <p className="text-gray-600">
-                {analytics?.channelInfo ? 
-                  (analytics.error ? 
-                    `Channel: ${analytics.channelInfo.name} (Analytics unavailable)` : 
-                    `Analytics for ${analytics.channelInfo.name}`
-                  ) : 
-                  "Welcome back! Here's your channel overview with live data."
+                {connectedChannels.length === 0 ? 
+                  "Connect your YouTube channels to view analytics" :
+                  analytics?.channelInfo ? 
+                    (analytics.error ? 
+                      `${analytics.channelInfo.name} (Analytics unavailable)` : 
+                      `Analytics for ${analytics.channelInfo.name}`
+                    ) : 
+                    `${connectedChannels.length} channel${connectedChannels.length !== 1 ? 's' : ''} connected`
                 }
               </p>
-              {analytics?.channelInfo && (
-                <Badge variant="outline" className={analytics.error ? "bg-orange-50 text-orange-700 border-orange-200" : "bg-green-50 text-green-700 border-green-200"}>
-                  <div className={`w-2 h-2 ${analytics.error ? 'bg-orange-500' : 'bg-green-500'} rounded-full mr-1`}></div>
-                  {analytics.error ? 'Data Error' : 'Connected'}
-                </Badge>
+              {connectedChannels.length > 0 && (
+                <>
+                  <Badge variant="outline" className={analytics?.error ? "bg-orange-50 text-orange-700 border-orange-200" : "bg-green-50 text-green-700 border-green-200"}>
+                    <div className={`w-2 h-2 ${analytics?.error ? 'bg-orange-500' : 'bg-green-500'} rounded-full mr-1`}></div>
+                    {analytics?.error ? 'Data Error' : 'Connected'}
+                  </Badge>
+                  <Badge variant="outline" className="text-blue-700 bg-blue-50 border-blue-200">
+                    {connectedChannels.length} Channel{connectedChannels.length !== 1 ? 's' : ''}
+                  </Badge>
+                </>
               )}
             </div>
           </div>
@@ -395,6 +402,13 @@ const Dashboard = () => {
               <RefreshCw className="w-4 h-4 mr-2" />
             )}
             Refresh
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => setShowChannelModal(true)}
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Manage Channels
           </Button>
           <Button 
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
