@@ -493,10 +493,11 @@ metadata:
 test_plan:
   current_focus:
     - "Enhanced Multi-Channel Management Dashboard"
-    - "Channel Connection/Disconnection Functionality"  
-    - "Multi-Channel State Management"
-    - "Channel Management Modal Functionality"
-  stuck_tasks: []
+    - "Frontend State Management Fix"
+    - "Dashboard Connected Channels Display"
+    - "Analytics API Integration Fix"
+  stuck_tasks: 
+    - "Enhanced Multi-Channel Management Dashboard"
   test_all: false
   test_priority: "high_first"
 
