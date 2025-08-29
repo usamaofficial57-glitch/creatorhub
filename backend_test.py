@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 
 # Get backend URL from frontend .env
-BACKEND_URL = "https://ytdata-connect.preview.emergentagent.com/api"
+BACKEND_URL = "https://tube-dash-helper.preview.emergentagent.com/api"
 
 class BackendTester:
     def __init__(self):
