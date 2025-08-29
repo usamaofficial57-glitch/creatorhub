@@ -407,7 +407,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {analytics.error && (
+        {analytics?.error && (
           <Card className="p-6 border-orange-200 bg-orange-50">
             <div className="flex items-center space-x-3">
               <RefreshCw className="w-5 h-5 text-orange-500" />
