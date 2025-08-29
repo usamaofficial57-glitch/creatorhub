@@ -142,7 +142,7 @@ const Dashboard = () => {
     );
   }
 
-  const stats = analytics ? [
+  const stats = analytics && analytics.connected ? [
     {
       label: 'Total Views',
       value: analytics.totalViews?.toLocaleString() || '0',
@@ -158,11 +158,11 @@ const Dashboard = () => {
       icon: Users
     },
     {
-      label: 'Avg View Duration',
-      value: analytics.avgViewDuration || '0:00',
-      change: '+2.3%',
+      label: 'Videos',
+      value: analytics.videoCount?.toLocaleString() || '0',
+      change: '+5.1%',
       positive: true,
-      icon: Clock
+      icon: Play
     },
     {
       label: 'Monthly Revenue',
