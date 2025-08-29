@@ -652,7 +652,6 @@ async def get_dashboard_analytics():
         
         top_performing_video = None
         total_video_views = 0
-        video_count = len(video_ids)
         
         if video_ids:
             # Get detailed video statistics
