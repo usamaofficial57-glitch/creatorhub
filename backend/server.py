@@ -13,7 +13,6 @@ import asyncio
 from googleapiclient.discovery import build
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import json
-import aiohttp
 import traceback
 
 ROOT_DIR = Path(__file__).parent
