@@ -1219,11 +1219,25 @@ async def get_dashboard_analytics():
                 "rpm": round(final_rpm, 2),
                 "baseRpm": round(base_rpm, 2),
                 "category": category_name,
-                "geographyMultiplier": round(geography_multiplier, 2),
+                "demographicMultiplier": round(demographic_multiplier, 3),
+                "legacyGeographyMultiplier": round(legacy_geography_multiplier, 2),
                 "sizeMultiplier": round(size_multiplier, 2),
                 "revenuePerDay": int(estimated_monthly_revenue / 30),
                 "revenuePerWeek": int(estimated_monthly_revenue / 4.33),
-                "breakdown": f"${estimated_monthly_revenue:,} = {int(estimated_monthly_views):,} views × ${final_rpm:.2f} RPM"
+                "breakdown": f"${estimated_monthly_revenue:,} = {int(estimated_monthly_views):,} views × ${final_rpm:.2f} RPM",
+                "demographicBreakdown": {
+                    "ageMultiplier": demographic_multipliers.get('age_multiplier', 1.0),
+                    "genderMultiplier": demographic_multipliers.get('gender_multiplier', 1.0),
+                    "geographicMultiplier": demographic_multipliers.get('geo_multiplier', 0.5),
+                    "coverageData": demographic_multipliers.get('weights_used', {}),
+                    "dataSource": demographics.get('data_source', 'fallback') if demographics else 'fallback'
+                },
+                "audienceDemographics": demographics if demographics else {
+                    "message": "Demographic data not available - using estimated multipliers",
+                    "age_groups": {},
+                    "gender": {},
+                    "countries": {}
+                }
             },
             "topPerformingVideo": top_performing_video,
             "monthlyGrowth": monthly_growth,
