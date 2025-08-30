@@ -691,6 +691,192 @@ class BackendTester:
         except Exception as e:
             self.log_result("Non-existent Channel Delete", "FAIL", f"Request error: {str(e)}")
 
+    def test_enhanced_revenue_calculation_system(self):
+        """Test the new enhanced monthly revenue calculation system"""
+        print("\n💰 ENHANCED REVENUE CALCULATION SYSTEM TESTING")
+        print("-" * 60)
+        
+        # Test different channel types for revenue calculation comparison
+        test_channels = [
+            {
+                "name": "MrBeast (Entertainment/Gaming)",
+                "channel_id": "UCX6OQ3DkcsbYNE6H8uQQuVA",
+                "expected_category": "entertainment",
+                "expected_high_revenue": True
+            },
+            {
+                "name": "Marques Brownlee (Tech)",
+                "channel_id": "UCBJycsmduvYEL83R_U4JriQ", 
+                "expected_category": "tech",
+                "expected_high_revenue": True
+            }
+        ]
+        
+        revenue_results = []
+        
+        for channel_info in test_channels:
+            try:
+                # Connect the channel
+                payload = {"channel_id": channel_info["channel_id"]}
+                connect_response = requests.post(f"{BACKEND_URL}/channels/connect", 
+                                               json=payload, timeout=20)
+                
+                if connect_response.status_code in [200, 400]:  # 400 if already connected
+                    # Set as primary channel
+                    requests.put(f"{BACKEND_URL}/channels/{channel_info['channel_id']}/primary", timeout=15)
+                    
+                    # Get dashboard analytics with revenue details
+                    dashboard_response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=25)
+                    
+                    if dashboard_response.status_code == 200:
+                        data = dashboard_response.json()
+                        
+                        if data.get('connected') and 'revenueDetails' in data:
+                            revenue_details = data['revenueDetails']
+                            
+                            # Verify all required revenue detail fields are present
+                            required_fields = [
+                                'estimatedMonthlyViews', 'rpm', 'baseRpm', 'category',
+                                'geographyMultiplier', 'sizeMultiplier', 'breakdown'
+                            ]
+                            
+                            missing_fields = [field for field in required_fields if field not in revenue_details]
+                            
+                            if not missing_fields:
+                                revenue_results.append({
+                                    "channel": channel_info["name"],
+                                    "channel_id": channel_info["channel_id"],
+                                    "revenue": data.get('revenueThisMonth', 0),
+                                    "details": revenue_details,
+                                    "total_views": data.get('totalViews', 0),
+                                    "subscribers": data.get('totalSubscribers', 0)
+                                })
+                                
+                                self.log_result(f"Revenue Calculation - {channel_info['name']}", "PASS",
+                                              f"Revenue: ${revenue_details.get('rpm', 0):.2f} RPM, "
+                                              f"Category: {revenue_details.get('category', 'Unknown')}, "
+                                              f"Monthly: ${data.get('revenueThisMonth', 0):,}",
+                                              revenue_details)
+                            else:
+                                self.log_result(f"Revenue Calculation - {channel_info['name']}", "FAIL",
+                                              f"Missing revenue detail fields: {missing_fields}")
+                        else:
+                            self.log_result(f"Revenue Calculation - {channel_info['name']}", "FAIL",
+                                          "Missing revenueDetails in dashboard response")
+                    else:
+                        self.log_result(f"Revenue Calculation - {channel_info['name']}", "FAIL",
+                                      f"Dashboard request failed: {dashboard_response.status_code}")
+                else:
+                    self.log_result(f"Revenue Calculation - {channel_info['name']}", "FAIL",
+                                  f"Channel connection failed: {connect_response.status_code}")
+                    
+            except Exception as e:
+                self.log_result(f"Revenue Calculation - {channel_info['name']}", "FAIL",
+                              f"Request error: {str(e)}")
+        
+        # Compare revenue calculations between different channel types
+        if len(revenue_results) >= 2:
+            try:
+                mrBeast_result = next((r for r in revenue_results if "MrBeast" in r["channel"]), None)
+                marques_result = next((r for r in revenue_results if "Marques" in r["channel"]), None)
+                
+                if mrBeast_result and marques_result:
+                    mrBeast_rpm = mrBeast_result["details"]["rpm"]
+                    marques_rpm = marques_result["details"]["rpm"]
+                    
+                    # Verify different RPM calculations based on channel category
+                    if mrBeast_rpm != marques_rpm:
+                        self.log_result("Revenue RPM Differentiation", "PASS",
+                                      f"Different RPM rates: MrBeast ${mrBeast_rpm:.2f} vs Marques ${marques_rpm:.2f}")
+                    else:
+                        self.log_result("Revenue RPM Differentiation", "FAIL",
+                                      "RPM rates are identical for different channel types")
+                    
+                    # Verify revenue amounts are realistic (not the old $50k max system)
+                    mrBeast_revenue = mrBeast_result["revenue"]
+                    marques_revenue = marques_result["revenue"]
+                    
+                    # Check if revenues are different and realistic
+                    if mrBeast_revenue > 50000 or marques_revenue > 50000:
+                        self.log_result("Revenue Realism Check", "PASS",
+                                      f"Revenue exceeds old $50k cap: MrBeast ${mrBeast_revenue:,}, Marques ${marques_revenue:,}")
+                    elif mrBeast_revenue != marques_revenue:
+                        self.log_result("Revenue Realism Check", "PASS",
+                                      f"Different realistic revenues: MrBeast ${mrBeast_revenue:,}, Marques ${marques_revenue:,}")
+                    else:
+                        self.log_result("Revenue Realism Check", "FAIL",
+                                      "Revenue calculations appear to be using old system")
+                        
+            except Exception as e:
+                self.log_result("Revenue Comparison Analysis", "FAIL", f"Analysis error: {str(e)}")
+        
+        # Test revenue calculation accuracy with specific channel
+        try:
+            # Use MrBeast for detailed revenue calculation verification
+            payload = {"channel_id": "UCX6OQ3DkcsbYNE6H8uQQuVA"}
+            requests.post(f"{BACKEND_URL}/channels/connect", json=payload, timeout=20)
+            requests.put(f"{BACKEND_URL}/channels/UCX6OQ3DkcsbYNE6H8uQQuVA/primary", timeout=15)
+            
+            response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=25)
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get('connected') and 'revenueDetails' in data:
+                    details = data['revenueDetails']
+                    
+                    # Verify calculation components
+                    estimated_views = details.get('estimatedMonthlyViews', 0)
+                    rpm = details.get('rpm', 0)
+                    base_rpm = details.get('baseRpm', 0)
+                    geo_multiplier = details.get('geographyMultiplier', 1)
+                    size_multiplier = details.get('sizeMultiplier', 1)
+                    
+                    # Verify multipliers are applied correctly
+                    expected_rpm = base_rpm * geo_multiplier * size_multiplier
+                    rpm_diff = abs(rpm - expected_rpm)
+                    
+                    if rpm_diff < 0.01:  # Allow small floating point differences
+                        self.log_result("Revenue Calculation Accuracy", "PASS",
+                                      f"RPM calculation accurate: ${base_rpm:.2f} × {geo_multiplier:.2f} × {size_multiplier:.2f} = ${rpm:.2f}")
+                    else:
+                        self.log_result("Revenue Calculation Accuracy", "FAIL",
+                                      f"RPM calculation mismatch: expected ${expected_rpm:.2f}, got ${rpm:.2f}")
+                    
+                    # Verify breakdown string format
+                    breakdown = details.get('breakdown', '')
+                    if 'views' in breakdown and 'RPM' in breakdown and '$' in breakdown:
+                        self.log_result("Revenue Breakdown Format", "PASS",
+                                      f"Breakdown format correct: {breakdown}")
+                    else:
+                        self.log_result("Revenue Breakdown Format", "FAIL",
+                                      f"Invalid breakdown format: {breakdown}")
+                        
+                    # Verify industry-standard RPM rates are being used
+                    category = details.get('category', '').lower()
+                    expected_rpms = {
+                        'finance': 8.50, 'tech': 6.20, 'education': 4.80,
+                        'gaming': 2.20, 'entertainment': 1.80
+                    }
+                    
+                    category_key = None
+                    for key in expected_rpms:
+                        if key in category.lower():
+                            category_key = key
+                            break
+                    
+                    if category_key and abs(base_rpm - expected_rpms[category_key]) < 0.01:
+                        self.log_result("Industry RPM Rates", "PASS",
+                                      f"Correct base RPM for {category}: ${base_rpm:.2f}")
+                    elif category_key:
+                        self.log_result("Industry RPM Rates", "FAIL",
+                                      f"Incorrect base RPM for {category}: expected ${expected_rpms[category_key]:.2f}, got ${base_rpm:.2f}")
+                    else:
+                        self.log_result("Industry RPM Rates", "INFO",
+                                      f"Category '{category}' not in expected list, base RPM: ${base_rpm:.2f}")
+                        
+        except Exception as e:
+            self.log_result("Revenue Calculation Accuracy", "FAIL", f"Error: {str(e)}")
+
     def test_dashboard_state_management(self):
         """Test dashboard analytics in different states"""
         print("\n📊 DASHBOARD STATE MANAGEMENT TESTING")
