@@ -11,7 +11,7 @@ import json
 import time
 from datetime import datetime
 
-BACKEND_URL = "https://revenue-fix.preview.emergentagent.com/api"
+BACKEND_URL = "https://metrics-validator-2.preview.emergentagent.com/api"
 
 class ReviewRequestTester:
     def __init__(self):
