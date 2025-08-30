@@ -549,7 +549,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhanced revenue calculation system analysis completed successfully"
+    - "Dashboard analytics revenue calculation system with demographic factors testing completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
