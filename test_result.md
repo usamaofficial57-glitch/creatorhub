@@ -552,7 +552,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Dashboard analytics revenue calculation system with demographic factors testing completed successfully"
+    - "Frontend revenue display testing completed - YouTube API quota exceeded preventing full demographic calculation testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
