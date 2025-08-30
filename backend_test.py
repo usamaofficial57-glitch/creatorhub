@@ -930,7 +930,7 @@ class BackendTester:
 
     def run_focused_tests(self):
         """Run focused tests for the review request issues"""
-        print("🎯 COMPREHENSIVE YOUTUBE CHANNEL MANAGEMENT TESTING")
+        print("🎯 ENHANCED REVENUE CALCULATION SYSTEM TESTING")
         print(f"Testing against: {BACKEND_URL}")
         print("=" * 80)
         
@@ -938,24 +938,25 @@ class BackendTester:
         print("\n1️⃣ Checking current database state...")
         existing_channels = self.test_database_state_check()
         
-        # 2. Test dashboard state management
+        # 2. Test enhanced revenue calculation system (PRIMARY FOCUS)
+        self.test_enhanced_revenue_calculation_system()
+        
+        # 3. Test dashboard state management
         self.test_dashboard_state_management()
         
-        # 3. Test basic channel connection formats
-        print("\n3️⃣ Testing channel connection formats...")
+        # 4. Test basic channel connection formats
+        print("\n4️⃣ Testing channel connection formats...")
         channel_id_1 = self.test_channel_connection_channel_id()  # Marques Brownlee
         channel_id_2 = self.test_channel_connection_url_formats()  # MrBeast
         channel_id_3 = self.test_channel_connection_handle()  # Handle format
         
-        # 4. Test channel management operations
-        print("\n4️⃣ Testing channel management operations...")
+        # 5. Test channel management operations
+        print("\n5️⃣ Testing channel management operations...")
         self.test_get_connected_channels()
         
-        # 5. Test multi-channel scenarios
-        self.test_multi_channel_scenarios()
-        
-        # 6. Test comprehensive error handling
-        self.test_comprehensive_error_handling()
+        # 6. Test analytics dashboard with connected channels
+        print("\n6️⃣ Testing analytics dashboard with connected channels...")
+        self.test_analytics_dashboard_with_connected_channel()
         
         # 7. Test basic API functionality
         print("\n7️⃣ Testing basic API functionality...")
@@ -964,7 +965,7 @@ class BackendTester:
         
         # Print comprehensive summary
         print("\n" + "=" * 80)
-        print("🎯 COMPREHENSIVE TEST SUMMARY")
+        print("🎯 ENHANCED REVENUE CALCULATION TEST SUMMARY")
         print("=" * 80)
         print(f"Total Tests: {self.total_tests}")
         print(f"Passed: {self.passed_tests}")
