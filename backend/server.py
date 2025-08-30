@@ -13,6 +13,10 @@ from googleapiclient.discovery import build
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import json
 import traceback
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+import google.auth.exceptions
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
