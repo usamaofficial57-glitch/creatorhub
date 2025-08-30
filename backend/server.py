@@ -887,7 +887,8 @@ async def get_dashboard_analytics():
                 "id": channel_id,
                 "handle": primary_channel.get('channel_handle'),
                 "thumbnail": snippet['thumbnails']['medium']['url'],
-                "description": snippet.get('description', '')[:200] + "..." if snippet.get('description') else ""
+                "description": snippet.get('description', '')[:200] + "..." if snippet.get('description') else "",
+                "category": category_name
             },
             "totalViews": int(statistics.get('viewCount', 0)),
             "totalSubscribers": int(statistics.get('subscriberCount', 0)),
@@ -896,6 +897,17 @@ async def get_dashboard_analytics():
             "clickThroughRate": 12.8,
             "engagementRate": 8.5,
             "revenueThisMonth": estimated_monthly_revenue,
+            "revenueDetails": {
+                "estimatedMonthlyViews": int(estimated_monthly_views),
+                "rpm": round(final_rpm, 2),
+                "baseRpm": round(base_rpm, 2),
+                "category": category_name,
+                "geographyMultiplier": round(geography_multiplier, 2),
+                "sizeMultiplier": round(size_multiplier, 2),
+                "revenuePerDay": int(estimated_monthly_revenue / 30),
+                "revenuePerWeek": int(estimated_monthly_revenue / 4.33),
+                "breakdown": f"${estimated_monthly_revenue:,} = {int(estimated_monthly_views):,} views × ${final_rpm:.2f} RPM"
+            },
             "topPerformingVideo": top_performing_video,
             "monthlyGrowth": monthly_growth,
             "lastUpdated": datetime.utcnow().isoformat()
