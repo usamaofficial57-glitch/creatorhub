@@ -816,9 +816,54 @@ async def get_dashboard_analytics():
                         "thumbnail": video['snippet']['thumbnails']['medium']['url']
                     }
         
-        # Calculate estimated revenue (simplified calculation)
+        # Calculate realistic estimated revenue based on channel analysis
         total_views = int(statistics.get('viewCount', 0))
-        estimated_monthly_revenue = max(100, min(50000, total_views // 10000))  # Very rough estimate
+        total_subscribers = int(statistics.get('subscriberCount', 0))
+        video_count = int(statistics.get('videoCount', 0))
+        
+        # Estimate recent monthly views (simplified approach using video analysis)
+        # In reality, this would come from YouTube Analytics API
+        if video_count > 0:
+            avg_views_per_video = total_views / video_count
+            # Estimate monthly uploads and views based on channel size
+            if total_subscribers > 10000000:  # 10M+ subscribers
+                estimated_monthly_videos = min(15, max(4, video_count / 24))  # Large channels post more
+                estimated_monthly_views = avg_views_per_video * estimated_monthly_videos * 1.5  # Bigger channels get more views per video
+            elif total_subscribers > 1000000:  # 1M+ subscribers  
+                estimated_monthly_videos = min(10, max(3, video_count / 36))
+                estimated_monthly_views = avg_views_per_video * estimated_monthly_videos * 1.2
+            elif total_subscribers > 100000:  # 100K+ subscribers
+                estimated_monthly_videos = min(8, max(2, video_count / 48))
+                estimated_monthly_views = avg_views_per_video * estimated_monthly_videos
+            else:  # Smaller channels
+                estimated_monthly_videos = max(1, video_count / 60)
+                estimated_monthly_views = avg_views_per_video * estimated_monthly_videos * 0.8
+        else:
+            estimated_monthly_views = 0
+        
+        # Determine channel category/niche based on channel analysis
+        channel_category = analyze_channel_category(snippet.get('title', ''), snippet.get('description', ''), top_performing_video)
+        
+        # Get RPM rate based on category
+        rpm_data = get_category_rpm(channel_category)
+        base_rpm = rpm_data['rpm']
+        category_name = rpm_data['category']
+        
+        # Apply audience geography multiplier (simplified)
+        # In reality, this would analyze actual audience geography from YouTube Analytics
+        geography_multiplier = estimate_geography_multiplier(total_subscribers, channel_category)
+        
+        # Apply channel size multiplier
+        size_multiplier = get_channel_size_multiplier(total_subscribers)
+        
+        # Calculate final RPM
+        final_rpm = base_rpm * geography_multiplier * size_multiplier
+        
+        # Calculate estimated monthly revenue
+        estimated_monthly_revenue = max(1, int((estimated_monthly_views / 1000) * final_rpm))
+        
+        # Cap at reasonable maximum (even MrBeast doesn't make $10M/month from AdSense alone)
+        estimated_monthly_revenue = min(estimated_monthly_revenue, 2000000)  # $2M max
         
         # Simulated monthly growth data (in real implementation, this would come from YouTube Analytics API)
         monthly_growth = [
