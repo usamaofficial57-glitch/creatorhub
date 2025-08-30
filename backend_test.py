@@ -830,31 +830,28 @@ class BackendTester:
         except Exception as e:
             self.log_result("Enhanced Revenue System", "FAIL", f"Test error: {str(e)}")
 
-    def test_enhanced_revenue_calculation_system(self):
-        """Test the new enhanced monthly revenue calculation system"""
-        print("\n💰 ENHANCED REVENUE CALCULATION SYSTEM TESTING")
+    def test_demographic_aware_revenue_calculation(self):
+        """Test the new demographic-aware revenue calculation system"""
+        print("\n🎯 DEMOGRAPHIC-AWARE REVENUE CALCULATION TESTING")
         print("-" * 60)
         
-        # First test with existing channels to avoid quota issues
-        self.test_revenue_calculation_with_existing_channels()
-        
-        # Test different channel types for revenue calculation comparison (if quota allows)
+        # Test channels with different expected demographics
         test_channels = [
             {
-                "name": "MrBeast (Entertainment/Gaming)",
+                "name": "MrBeast (Entertainment - Young Audience)",
                 "channel_id": "UCX6OQ3DkcsbYNE6H8uQQuVA",
                 "expected_category": "entertainment",
-                "expected_high_revenue": True
+                "expected_demographics": {"young_audience": True, "global": True}
             },
             {
-                "name": "Marques Brownlee (Tech)",
+                "name": "Marques Brownlee (Tech - Premium Audience)",
                 "channel_id": "UCBJycsmduvYEL83R_U4JriQ", 
                 "expected_category": "tech",
-                "expected_high_revenue": True
+                "expected_demographics": {"premium_audience": True, "tech_focused": True}
             }
         ]
         
-        revenue_results = []
+        demographic_results = []
         
         for channel_info in test_channels:
             try:
@@ -867,8 +864,8 @@ class BackendTester:
                     # Set as primary channel
                     requests.put(f"{BACKEND_URL}/channels/{channel_info['channel_id']}/primary", timeout=15)
                     
-                    # Get dashboard analytics with revenue details
-                    dashboard_response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=25)
+                    # Get dashboard analytics with demographic-enhanced revenue details
+                    dashboard_response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=30)
                     
                     if dashboard_response.status_code == 200:
                         data = dashboard_response.json()
@@ -876,85 +873,262 @@ class BackendTester:
                         if data.get('connected') and 'revenueDetails' in data:
                             revenue_details = data['revenueDetails']
                             
-                            # Verify all required revenue detail fields are present
-                            required_fields = [
-                                'estimatedMonthlyViews', 'rpm', 'baseRpm', 'category',
-                                'geographyMultiplier', 'sizeMultiplier', 'breakdown'
+                            # Test 1: Verify NEW demographic-aware fields are present
+                            demographic_fields = [
+                                'demographicMultiplier', 'demographicBreakdown', 'audienceDemographics'
                             ]
                             
-                            missing_fields = [field for field in required_fields if field not in revenue_details]
+                            missing_demographic_fields = [field for field in demographic_fields if field not in revenue_details]
                             
-                            if not missing_fields:
-                                revenue_results.append({
+                            if not missing_demographic_fields:
+                                self.log_result(f"Demographic Fields - {channel_info['name']}", "PASS",
+                                              f"All demographic fields present: {demographic_fields}")
+                                
+                                # Test 2: Verify demographicBreakdown structure
+                                demographic_breakdown = revenue_details.get('demographicBreakdown', {})
+                                breakdown_fields = ['ageMultiplier', 'genderMultiplier', 'geographicMultiplier']
+                                
+                                missing_breakdown_fields = [field for field in breakdown_fields if field not in demographic_breakdown]
+                                
+                                if not missing_breakdown_fields:
+                                    self.log_result(f"Demographic Breakdown - {channel_info['name']}", "PASS",
+                                                  f"Complete breakdown: Age={demographic_breakdown['ageMultiplier']:.3f}, "
+                                                  f"Gender={demographic_breakdown['genderMultiplier']:.3f}, "
+                                                  f"Geo={demographic_breakdown['geographicMultiplier']:.3f}")
+                                else:
+                                    self.log_result(f"Demographic Breakdown - {channel_info['name']}", "FAIL",
+                                                  f"Missing breakdown fields: {missing_breakdown_fields}")
+                                
+                                # Test 3: Verify audienceDemographics structure
+                                audience_demographics = revenue_details.get('audienceDemographics', {})
+                                
+                                if isinstance(audience_demographics, dict):
+                                    expected_demo_fields = ['age_groups', 'gender', 'countries']
+                                    demo_fields_present = [field for field in expected_demo_fields if field in audience_demographics]
+                                    
+                                    if len(demo_fields_present) >= 2:  # At least 2 demographic categories
+                                        self.log_result(f"Audience Demographics - {channel_info['name']}", "PASS",
+                                                      f"Demographics available: {demo_fields_present}")
+                                        
+                                        # Test age groups if present
+                                        if 'age_groups' in audience_demographics and audience_demographics['age_groups']:
+                                            age_groups = audience_demographics['age_groups']
+                                            total_age_percentage = sum(age_groups.values())
+                                            self.log_result(f"Age Demographics - {channel_info['name']}", "PASS",
+                                                          f"Age groups: {list(age_groups.keys())}, Total: {total_age_percentage}%")
+                                        
+                                        # Test gender distribution if present
+                                        if 'gender' in audience_demographics and audience_demographics['gender']:
+                                            gender_dist = audience_demographics['gender']
+                                            self.log_result(f"Gender Demographics - {channel_info['name']}", "PASS",
+                                                          f"Gender distribution: {gender_dist}")
+                                        
+                                        # Test geographic distribution if present
+                                        if 'countries' in audience_demographics and audience_demographics['countries']:
+                                            countries = audience_demographics['countries']
+                                            top_countries = list(countries.keys())[:3]
+                                            self.log_result(f"Geographic Demographics - {channel_info['name']}", "PASS",
+                                                          f"Top countries: {top_countries}")
+                                    else:
+                                        self.log_result(f"Audience Demographics - {channel_info['name']}", "FAIL",
+                                                      f"Insufficient demographic data: {demo_fields_present}")
+                                else:
+                                    self.log_result(f"Audience Demographics - {channel_info['name']}", "FAIL",
+                                                  "Invalid audienceDemographics format")
+                                
+                                # Test 4: Verify enhanced RPM calculation formula
+                                base_rpm = revenue_details.get('baseRpm', 0)
+                                demographic_multiplier = revenue_details.get('demographicMultiplier', 0)
+                                size_multiplier = revenue_details.get('sizeMultiplier', 1)
+                                final_rpm = revenue_details.get('rpm', 0)
+                                
+                                # New formula: base_rpm * demographic_multiplier * size_multiplier
+                                expected_rpm = base_rpm * demographic_multiplier * size_multiplier
+                                rpm_diff = abs(final_rpm - expected_rpm)
+                                
+                                if rpm_diff < 0.01:
+                                    self.log_result(f"Enhanced RPM Formula - {channel_info['name']}", "PASS",
+                                                  f"Correct: ${base_rpm:.2f} × {demographic_multiplier:.3f} × {size_multiplier:.2f} = ${final_rpm:.2f}")
+                                else:
+                                    self.log_result(f"Enhanced RPM Formula - {channel_info['name']}", "FAIL",
+                                                  f"Mismatch: expected ${expected_rpm:.2f}, got ${final_rpm:.2f}")
+                                
+                                # Test 5: Verify demographic multiplier is being used instead of geography multiplier
+                                legacy_geo_multiplier = revenue_details.get('legacyGeographyMultiplier', 0)
+                                
+                                if demographic_multiplier != legacy_geo_multiplier:
+                                    self.log_result(f"Demographic vs Legacy - {channel_info['name']}", "PASS",
+                                                  f"Using demographic multiplier ({demographic_multiplier:.3f}) instead of legacy geo ({legacy_geo_multiplier:.3f})")
+                                else:
+                                    self.log_result(f"Demographic vs Legacy - {channel_info['name']}", "FAIL",
+                                                  "Demographic multiplier same as legacy geography multiplier")
+                                
+                                # Store results for comparison
+                                demographic_results.append({
                                     "channel": channel_info["name"],
                                     "channel_id": channel_info["channel_id"],
                                     "revenue": data.get('revenueThisMonth', 0),
-                                    "details": revenue_details,
-                                    "total_views": data.get('totalViews', 0),
-                                    "subscribers": data.get('totalSubscribers', 0)
+                                    "demographic_multiplier": demographic_multiplier,
+                                    "demographic_breakdown": demographic_breakdown,
+                                    "audience_demographics": audience_demographics,
+                                    "category": revenue_details.get('category', 'Unknown')
                                 })
                                 
-                                self.log_result(f"Revenue Calculation - {channel_info['name']}", "PASS",
-                                              f"Revenue: ${revenue_details.get('rpm', 0):.2f} RPM, "
-                                              f"Category: {revenue_details.get('category', 'Unknown')}, "
-                                              f"Monthly: ${data.get('revenueThisMonth', 0):,}",
-                                              revenue_details)
                             else:
-                                self.log_result(f"Revenue Calculation - {channel_info['name']}", "FAIL",
-                                              f"Missing revenue detail fields: {missing_fields}")
+                                self.log_result(f"Demographic Fields - {channel_info['name']}", "FAIL",
+                                              f"Missing demographic fields: {missing_demographic_fields}")
                         else:
-                            self.log_result(f"Revenue Calculation - {channel_info['name']}", "INFO",
-                                          f"Dashboard response: connected={data.get('connected')}, has_revenueDetails={'revenueDetails' in data}")
+                            self.log_result(f"Demographic Revenue - {channel_info['name']}", "FAIL",
+                                          f"No revenue details in response: connected={data.get('connected')}")
                     else:
-                        self.log_result(f"Revenue Calculation - {channel_info['name']}", "FAIL",
+                        self.log_result(f"Demographic Revenue - {channel_info['name']}", "FAIL",
                                       f"Dashboard request failed: {dashboard_response.status_code}")
-                elif connect_response.status_code == 500:
-                    # Likely quota exceeded
-                    self.log_result(f"Revenue Calculation - {channel_info['name']}", "INFO",
-                                  "Skipped due to YouTube API quota exceeded")
                 else:
-                    self.log_result(f"Revenue Calculation - {channel_info['name']}", "FAIL",
-                                  f"Channel connection failed: {connect_response.status_code}")
+                    self.log_result(f"Demographic Revenue - {channel_info['name']}", "INFO",
+                                  f"Channel connection status: {connect_response.status_code}")
                     
             except Exception as e:
-                self.log_result(f"Revenue Calculation - {channel_info['name']}", "FAIL",
+                self.log_result(f"Demographic Revenue - {channel_info['name']}", "FAIL",
                               f"Request error: {str(e)}")
         
-        # Compare revenue calculations between different channel types
-        if len(revenue_results) >= 2:
+        # Test 6: Compare demographic profiles between different channel types
+        if len(demographic_results) >= 2:
             try:
-                mrBeast_result = next((r for r in revenue_results if "MrBeast" in r["channel"]), None)
-                marques_result = next((r for r in revenue_results if "Marques" in r["channel"]), None)
+                entertainment_result = next((r for r in demographic_results if "MrBeast" in r["channel"]), None)
+                tech_result = next((r for r in demographic_results if "Marques" in r["channel"]), None)
                 
-                if mrBeast_result and marques_result:
-                    mrBeast_rpm = mrBeast_result["details"]["rpm"]
-                    marques_rpm = marques_result["details"]["rpm"]
+                if entertainment_result and tech_result:
+                    # Compare demographic multipliers
+                    ent_demo_mult = entertainment_result["demographic_multiplier"]
+                    tech_demo_mult = tech_result["demographic_multiplier"]
                     
-                    # Verify different RPM calculations based on channel category
-                    if mrBeast_rpm != marques_rpm:
-                        self.log_result("Revenue RPM Differentiation", "PASS",
-                                      f"Different RPM rates: MrBeast ${mrBeast_rpm:.2f} vs Marques ${marques_rpm:.2f}")
+                    if ent_demo_mult != tech_demo_mult:
+                        self.log_result("Channel Type Demographics", "PASS",
+                                      f"Different demographic profiles: Entertainment={ent_demo_mult:.3f} vs Tech={tech_demo_mult:.3f}")
                     else:
-                        self.log_result("Revenue RPM Differentiation", "FAIL",
-                                      "RPM rates are identical for different channel types")
+                        self.log_result("Channel Type Demographics", "FAIL",
+                                      "Identical demographic multipliers for different channel types")
                     
-                    # Verify revenue amounts are realistic (not the old $50k max system)
-                    mrBeast_revenue = mrBeast_result["revenue"]
-                    marques_revenue = marques_result["revenue"]
+                    # Compare age demographics
+                    ent_age = entertainment_result["audience_demographics"].get('age_groups', {})
+                    tech_age = tech_result["audience_demographics"].get('age_groups', {})
                     
-                    # Check if revenues are different and realistic
-                    if mrBeast_revenue > 50000 or marques_revenue > 50000:
-                        self.log_result("Revenue Realism Check", "PASS",
-                                      f"Revenue exceeds old $50k cap: MrBeast ${mrBeast_revenue:,}, Marques ${marques_revenue:,}")
-                    elif mrBeast_revenue != marques_revenue:
-                        self.log_result("Revenue Realism Check", "PASS",
-                                      f"Different realistic revenues: MrBeast ${mrBeast_revenue:,}, Marques ${marques_revenue:,}")
+                    if ent_age and tech_age:
+                        # Check if age distributions are different (indicating niche audience consideration)
+                        ent_young = ent_age.get('18-24', 0) + ent_age.get('13-17', 0)
+                        tech_young = tech_age.get('18-24', 0) + tech_age.get('13-17', 0)
+                        
+                        if abs(ent_young - tech_young) > 10:  # Significant difference
+                            self.log_result("Niche Audience Age Analysis", "PASS",
+                                          f"Different age profiles: Entertainment young audience={ent_young}% vs Tech={tech_young}%")
+                        else:
+                            self.log_result("Niche Audience Age Analysis", "INFO",
+                                          f"Similar age profiles: Entertainment={ent_young}% vs Tech={tech_young}% young audience")
+                    
+                    # Compare geographic distributions
+                    ent_geo = entertainment_result["demographic_breakdown"].get('geographicMultiplier', 0)
+                    tech_geo = tech_result["demographic_breakdown"].get('geographicMultiplier', 0)
+                    
+                    if abs(ent_geo - tech_geo) > 0.1:
+                        self.log_result("Geographic Targeting", "PASS",
+                                      f"Different geographic targeting: Entertainment={ent_geo:.3f} vs Tech={tech_geo:.3f}")
                     else:
-                        self.log_result("Revenue Realism Check", "FAIL",
-                                      "Revenue calculations appear to be using old system")
+                        self.log_result("Geographic Targeting", "INFO",
+                                      f"Similar geographic targeting: Entertainment={ent_geo:.3f} vs Tech={tech_geo:.3f}")
                         
             except Exception as e:
-                self.log_result("Revenue Comparison Analysis", "FAIL", f"Analysis error: {str(e)}")
+                self.log_result("Demographic Comparison", "FAIL", f"Comparison error: {str(e)}")
+
+    def test_demographic_caching_system(self):
+        """Test demographic data caching functionality"""
+        print("\n🗄️ DEMOGRAPHIC CACHING SYSTEM TESTING")
+        print("-" * 60)
+        
+        try:
+            # Connect a channel to trigger demographic data fetching
+            payload = {"channel_id": "UCBJycsmduvYEL83R_U4JriQ"}  # Marques Brownlee
+            connect_response = requests.post(f"{BACKEND_URL}/channels/connect", json=payload, timeout=20)
+            
+            if connect_response.status_code in [200, 400]:
+                # Set as primary and get analytics (this should cache demographic data)
+                requests.put(f"{BACKEND_URL}/channels/UCBJycsmduvYEL83R_U4JriQ/primary", timeout=15)
+                
+                # First request - should fetch and cache demographic data
+                start_time = time.time()
+                response1 = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=30)
+                first_request_time = time.time() - start_time
+                
+                if response1.status_code == 200:
+                    data1 = response1.json()
+                    
+                    # Second request - should use cached demographic data (faster)
+                    start_time = time.time()
+                    response2 = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=30)
+                    second_request_time = time.time() - start_time
+                    
+                    if response2.status_code == 200:
+                        data2 = response2.json()
+                        
+                        # Verify both responses have demographic data
+                        if (data1.get('revenueDetails', {}).get('audienceDemographics') and 
+                            data2.get('revenueDetails', {}).get('audienceDemographics')):
+                            
+                            # Check if demographic data is consistent (indicating caching)
+                            demo1 = data1['revenueDetails']['audienceDemographics']
+                            demo2 = data2['revenueDetails']['audienceDemographics']
+                            
+                            if demo1 == demo2:
+                                self.log_result("Demographic Caching Consistency", "PASS",
+                                              f"Consistent demographic data across requests")
+                                
+                                # Check if second request was faster (indicating cache usage)
+                                if second_request_time < first_request_time * 0.8:  # 20% faster
+                                    self.log_result("Demographic Caching Performance", "PASS",
+                                                  f"Cached request faster: {second_request_time:.2f}s vs {first_request_time:.2f}s")
+                                else:
+                                    self.log_result("Demographic Caching Performance", "INFO",
+                                                  f"Request times: {first_request_time:.2f}s vs {second_request_time:.2f}s")
+                                
+                                # Verify cache metadata if present
+                                data_source = demo1.get('data_source', 'unknown')
+                                if 'cache' in data_source.lower() or 'estimated' in data_source.lower():
+                                    self.log_result("Demographic Cache Metadata", "PASS",
+                                                  f"Cache metadata present: {data_source}")
+                                else:
+                                    self.log_result("Demographic Cache Metadata", "INFO",
+                                                  f"Data source: {data_source}")
+                            else:
+                                self.log_result("Demographic Caching Consistency", "FAIL",
+                                              "Inconsistent demographic data between requests")
+                        else:
+                            self.log_result("Demographic Caching", "FAIL",
+                                          "Missing demographic data in responses")
+                    else:
+                        self.log_result("Demographic Caching", "FAIL",
+                                      f"Second request failed: {response2.status_code}")
+                else:
+                    self.log_result("Demographic Caching", "FAIL",
+                                  f"First request failed: {response1.status_code}")
+            else:
+                self.log_result("Demographic Caching", "INFO",
+                              f"Channel connection status: {connect_response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Demographic Caching", "FAIL", f"Caching test error: {str(e)}")
+
+    def test_enhanced_revenue_calculation_system(self):
+        """Test the complete enhanced revenue calculation system"""
+        print("\n💰 ENHANCED REVENUE CALCULATION SYSTEM TESTING")
+        print("-" * 60)
+        
+        # Test 1: Demographic-aware revenue calculation
+        self.test_demographic_aware_revenue_calculation()
+        
+        # Test 2: Demographic caching system
+        self.test_demographic_caching_system()
+        
+        # Test 3: Legacy system comparison (existing functionality)
+        self.test_revenue_calculation_with_existing_channels()
 
     def test_dashboard_state_management(self):
         """Test dashboard analytics in different states"""
