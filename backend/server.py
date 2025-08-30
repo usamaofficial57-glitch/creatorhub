@@ -1138,21 +1138,49 @@ async def get_dashboard_analytics():
         base_rpm = rpm_data['rpm']
         category_name = rpm_data['category']
         
-        # Apply audience geography multiplier (simplified)
-        # In reality, this would analyze actual audience geography from YouTube Analytics
-        geography_multiplier = estimate_geography_multiplier(total_subscribers, channel_category)
+        # *** ENHANCED DEMOGRAPHIC-AWARE REVENUE CALCULATION ***
         
-        # Apply channel size multiplier
+        # Step 1: Fetch real audience demographics
+        logger.info(f"Fetching demographic data for channel {channel_id}")
+        
+        # Try to get cached demographics first
+        demographics = await get_cached_demographics(channel_id)
+        
+        if not demographics:
+            # Fetch new demographic data
+            demographics = await fetch_youtube_demographics(channel_id, YOUTUBE_API_KEY)
+            
+            # Cache the demographic data
+            if demographics:
+                await store_channel_demographics(channel_id, demographics)
+        
+        # Step 2: Calculate demographic-aware multipliers
+        demographic_multipliers = {'combined_multiplier': 0.7}  # Fallback
+        
+        if demographics:
+            demographic_multipliers = calculate_demographic_multiplier(demographics)
+            logger.info(f"Calculated demographic multipliers: {demographic_multipliers}")
+        else:
+            logger.warning(f"No demographic data available for channel {channel_id}, using fallback multipliers")
+        
+        # Step 3: Apply legacy geography and size multipliers (for baseline)
+        legacy_geography_multiplier = estimate_geography_multiplier(total_subscribers, channel_category)
         size_multiplier = get_channel_size_multiplier(total_subscribers)
         
-        # Calculate final RPM
-        final_rpm = base_rpm * geography_multiplier * size_multiplier
+        # Step 4: Calculate enhanced final RPM with demographic data
+        # Combine demographic multiplier with legacy multipliers
+        demographic_multiplier = demographic_multipliers['combined_multiplier']
         
-        # Calculate estimated monthly revenue
+        # Use demographic multiplier instead of estimated geography multiplier
+        final_rpm = base_rpm * demographic_multiplier * size_multiplier
+        
+        # Step 5: Calculate demographic-aware monthly revenue
         estimated_monthly_revenue = max(1, int((estimated_monthly_views / 1000) * final_rpm))
         
-        # Cap at reasonable maximum (even MrBeast doesn't make $10M/month from AdSense alone)
+        # Cap at reasonable maximum
         estimated_monthly_revenue = min(estimated_monthly_revenue, 2000000)  # $2M max
+        
+        logger.info(f"Enhanced revenue calculation: ${estimated_monthly_revenue:,} (RPM: ${final_rpm:.2f}, Demographics: {demographic_multiplier:.3f})")
         
         # Simulated monthly growth data (in real implementation, this would come from YouTube Analytics API)
         monthly_growth = [
