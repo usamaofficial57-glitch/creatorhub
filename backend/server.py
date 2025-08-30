@@ -249,6 +249,139 @@ def get_category_rpm(category):
     
     return rpm_rates.get(category, rpm_rates['general'])
 
+def get_age_demographic_multipliers():
+    """Get RPM multipliers based on audience age demographics"""
+    # Age groups and their spending power impact on ad rates
+    # Based on advertiser targeting preferences and CPM data
+    return {
+        '13-17': 0.6,   # Teens: Limited spending power, fewer premium ads
+        '18-24': 0.85,  # Young adults: Students, entry-level jobs, moderate spending
+        '25-34': 1.4,   # Prime demographic: High earning potential, peak consumption
+        '35-44': 1.5,   # Peak earning years: Homeowners, families, highest value
+        '45-54': 1.3,   # Established careers: High disposable income, premium targeting
+        '55-64': 1.1,   # Pre-retirement: Good income but less online consumption
+        '65+': 0.9      # Seniors: Fixed income but higher brand loyalty
+    }
+
+def get_gender_demographic_multipliers():
+    """Get RPM multipliers based on audience gender demographics"""
+    # Gender-based ad targeting and spending patterns
+    return {
+        'male': 1.0,    # Baseline multiplier
+        'female': 1.15, # Slightly higher due to shopping/beauty/lifestyle ad premiums
+        'other': 1.0    # Equal to baseline
+    }
+
+def get_country_tier_multipliers():
+    """Get RPM multipliers based on geographic distribution"""
+    # Country tiers based on advertiser spending and CPM rates
+    return {
+        # Tier 1: Highest paying countries
+        'tier_1': {
+            'multiplier': 1.0,
+            'countries': ['US', 'CA', 'GB', 'AU', 'DE', 'NL', 'CH', 'NO', 'SE', 'DK']
+        },
+        # Tier 2: Medium paying countries  
+        'tier_2': {
+            'multiplier': 0.6,
+            'countries': ['FR', 'IT', 'ES', 'JP', 'KR', 'SG', 'HK', 'NZ', 'BE', 'AT']
+        },
+        # Tier 3: Lower paying countries
+        'tier_3': {
+            'multiplier': 0.3,
+            'countries': ['BR', 'MX', 'AR', 'RU', 'TR', 'PL', 'CZ', 'HU', 'GR', 'PT']
+        },
+        # Tier 4: Lowest paying countries
+        'tier_4': {
+            'multiplier': 0.15,
+            'countries': ['IN', 'ID', 'PH', 'TH', 'VN', 'BD', 'PK', 'NG', 'EG', 'KE']
+        }
+    }
+
+def calculate_demographic_multiplier(demographics_data):
+    """Calculate comprehensive demographic multiplier based on real audience data"""
+    try:
+        age_multipliers = get_age_demographic_multipliers()
+        gender_multipliers = get_gender_demographic_multipliers()
+        country_tiers = get_country_tier_multipliers()
+        
+        # Initialize weighted multipliers
+        total_age_weight = 0
+        total_gender_weight = 0
+        total_geo_weight = 0
+        
+        age_weighted_multiplier = 0
+        gender_weighted_multiplier = 0
+        geo_weighted_multiplier = 0
+        
+        # Calculate age demographic impact
+        if 'age_groups' in demographics_data:
+            for age_group, percentage in demographics_data['age_groups'].items():
+                if age_group in age_multipliers:
+                    weight = percentage / 100.0
+                    age_weighted_multiplier += age_multipliers[age_group] * weight
+                    total_age_weight += weight
+        
+        # Calculate gender demographic impact
+        if 'gender' in demographics_data:
+            for gender, percentage in demographics_data['gender'].items():
+                if gender.lower() in gender_multipliers:
+                    weight = percentage / 100.0
+                    gender_weighted_multiplier += gender_multipliers[gender.lower()] * weight
+                    total_gender_weight += weight
+        
+        # Calculate geographic impact
+        if 'countries' in demographics_data:
+            for country_code, percentage in demographics_data['countries'].items():
+                weight = percentage / 100.0
+                
+                # Find which tier this country belongs to
+                country_multiplier = 0.1  # Default for unclassified countries
+                for tier_name, tier_data in country_tiers.items():
+                    if country_code.upper() in tier_data['countries']:
+                        country_multiplier = tier_data['multiplier']
+                        break
+                
+                geo_weighted_multiplier += country_multiplier * weight
+                total_geo_weight += weight
+        
+        # Normalize multipliers (fallback to 1.0 if no data)
+        final_age_multiplier = age_weighted_multiplier if total_age_weight > 0 else 1.0
+        final_gender_multiplier = gender_weighted_multiplier if total_gender_weight > 0 else 1.0
+        final_geo_multiplier = geo_weighted_multiplier if total_geo_weight > 0 else 0.5  # Conservative default
+        
+        # Calculate combined demographic multiplier
+        # Weight: Geography (50%), Age (35%), Gender (15%)
+        combined_multiplier = (
+            final_geo_multiplier * 0.50 +
+            final_age_multiplier * 0.35 +
+            final_gender_multiplier * 0.15
+        )
+        
+        return {
+            'combined_multiplier': round(combined_multiplier, 3),
+            'age_multiplier': round(final_age_multiplier, 3),
+            'gender_multiplier': round(final_gender_multiplier, 3),
+            'geo_multiplier': round(final_geo_multiplier, 3),
+            'weights_used': {
+                'age_coverage': round(total_age_weight * 100, 1),
+                'gender_coverage': round(total_gender_weight * 100, 1),
+                'geo_coverage': round(total_geo_weight * 100, 1)
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error calculating demographic multiplier: {e}")
+        # Return conservative fallback multipliers
+        return {
+            'combined_multiplier': 0.7,
+            'age_multiplier': 1.0,
+            'gender_multiplier': 1.0,
+            'geo_multiplier': 0.5,
+            'weights_used': {'age_coverage': 0, 'gender_coverage': 0, 'geo_coverage': 0},
+            'error': str(e)
+        }
+
 def estimate_geography_multiplier(subscriber_count, category):
     """Estimate geography multiplier based on channel size and category"""
     # Larger channels tend to have more global (higher-paying) audiences
