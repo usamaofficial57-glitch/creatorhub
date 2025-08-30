@@ -849,7 +849,7 @@ const Dashboard = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDisconnectChannel(channel.id, channel.channel_name)}
+                          onClick={() => handleDisconnectChannel(channel.channel_id, channel.channel_name)}
                           disabled={managingChannels}
                           className="text-red-600 hover:bg-red-50"
                         >
