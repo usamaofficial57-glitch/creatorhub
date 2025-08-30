@@ -357,6 +357,21 @@ backend:
         -agent: "testing"
         -comment: "✅ COMPREHENSIVE REVENUE CALCULATION TESTING COMPLETED (100% SUCCESS): All aspects of the revenue calculation system thoroughly tested and verified working correctly. REVENUE FORMULA VERIFICATION: Formula max(100, min(50000, total_views // 10000)) is implemented correctly and working as designed. TESTING RESULTS: 1) GET /api/analytics/dashboard ✅ - Returns accurate revenue data (MrBeast: 93.5B views → $50,000, TechLinked: 614M views → $50,000), 2) Connected channels analytics ✅ - All channels show correct revenue calculations based on their view counts, 3) Revenue calculation logic ✅ - Verified formula works correctly across all boundary conditions (0 views → $100 minimum, 500M+ views → $50,000 maximum, linear scaling $1 per 10,000 views), 4) Multiple channel scenarios ✅ - Revenue changes appropriately when switching primary channels with consistent calculations, 5) Consistency testing ✅ - Revenue calculations are consistent across multiple API calls with no inconsistencies between endpoints. KEY FINDINGS: Revenue formula is accurate and functioning as designed. Both major test channels hit the $50,000 maximum cap which is expected behavior for high-view channels. The simplified calculation provides reasonable estimates within the specified bounds. NO ISSUES FOUND with revenue calculation accuracy - the system is working correctly as implemented."
 
+  - task: "Enhanced Revenue Calculation System Analysis"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "testing"
+        -comment: "Analyzing current dashboard revenue calculation system as requested in review. Testing GET /api/analytics/dashboard endpoint, examining connected channels revenue details, verifying parameters used in revenue calculation (category, geography multiplier, channel size multiplier), checking algorithm accuracy max(1, int((estimated_monthly_views / 1000) * final_rpm)), analyzing revenueDetails section, testing with different channel scenarios, and investigating demographic factors like 'niche audience age and so on'."
+        -working: true
+        -agent: "testing"
+        -comment: "✅ ENHANCED REVENUE CALCULATION SYSTEM ANALYSIS COMPLETED (100% SUCCESS): Comprehensive analysis of current revenue calculation system reveals sophisticated algorithm working correctly. ALGORITHM VERIFIED: max(1, int((estimated_monthly_views / 1000) * final_rpm)) with category-based RPM rates (Finance: $8.50, Tech: $6.20, Gaming: $2.20), geography multipliers (1.2x for tech/finance, 0.9x for gaming), and size multipliers (10M+ subs: 1.4x, 1M+: 1.2x). CONNECTED CHANNEL ANALYSIS: Marques Brownlee (20.2M subscribers, 4.9B views) → $850,548 estimated monthly revenue using tech category calculations. REVENUE VARIATION TESTING: Small gaming channel ($250/month), medium tech channel ($18,755/month), large finance channel ($110,159/month), mega entertainment channel ($331,695/month). DEMOGRAPHIC FACTORS ASSESSMENT: Current system considers 5 basic factors (category, size, estimated geography, content volume, maturity) but MISSING 11 advanced demographic factors including audience age demographics, detailed geographic distribution, income level, engagement quality. ANSWER TO USER QUESTION: System does NOT currently consider 'niche audience age and so on' - uses simplified category-based estimation rather than detailed audience demographic analysis. RevenueDetails section structure confirmed with all calculation components properly exposed."
+
 frontend:
   - task: "Sidebar Navigation"
     implemented: true
