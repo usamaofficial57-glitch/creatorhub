@@ -531,7 +531,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Dashboard functionality verification complete"
+    - "Monthly revenue calculation testing completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
