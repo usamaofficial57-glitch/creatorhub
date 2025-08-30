@@ -177,6 +177,125 @@ def calculate_viral_score(views, published_date, subscriber_count=None):
     except:
         return 50
 
+def analyze_channel_category(channel_title, channel_description, top_video):
+    """Analyze channel category/niche based on title, description, and top video"""
+    # Combine text for analysis
+    text_to_analyze = f"{channel_title} {channel_description}"
+    if top_video:
+        text_to_analyze += f" {top_video.get('title', '')}"
+    
+    text_lower = text_to_analyze.lower()
+    
+    # Gaming
+    if any(keyword in text_lower for keyword in ['gaming', 'game', 'minecraft', 'fortnite', 'valorant', 'league of legends', 'gamer', 'gameplay', 'esports', 'twitch']):
+        return 'gaming'
+    
+    # Tech/Programming
+    elif any(keyword in text_lower for keyword in ['tech', 'technology', 'programming', 'coding', 'software', 'developer', 'python', 'javascript', 'tutorial', 'review', 'unboxing']):
+        return 'tech'
+    
+    # Finance/Business
+    elif any(keyword in text_lower for keyword in ['finance', 'business', 'money', 'investing', 'stocks', 'crypto', 'bitcoin', 'entrepreneur', 'marketing', 'sales']):
+        return 'finance'
+    
+    # Education
+    elif any(keyword in text_lower for keyword in ['education', 'learning', 'school', 'university', 'course', 'lesson', 'teach', 'study', 'math', 'science']):
+        return 'education'
+    
+    # Entertainment/Comedy
+    elif any(keyword in text_lower for keyword in ['comedy', 'funny', 'entertainment', 'meme', 'reaction', 'prank', 'challenge', 'vlog', 'story']):
+        return 'entertainment'
+    
+    # Health/Fitness
+    elif any(keyword in text_lower for keyword in ['fitness', 'health', 'workout', 'gym', 'diet', 'nutrition', 'wellness', 'yoga', 'meditation']):
+        return 'health'
+    
+    # Beauty/Fashion
+    elif any(keyword in text_lower for keyword in ['beauty', 'makeup', 'fashion', 'style', 'skincare', 'hair', 'outfit', 'cosmetics']):
+        return 'beauty'
+    
+    # Food/Cooking
+    elif any(keyword in text_lower for keyword in ['cooking', 'recipe', 'food', 'kitchen', 'chef', 'baking', 'restaurant', 'taste']):
+        return 'food'
+    
+    # Travel
+    elif any(keyword in text_lower for keyword in ['travel', 'trip', 'vacation', 'adventure', 'explore', 'country', 'city', 'culture']):
+        return 'travel'
+    
+    # Music
+    elif any(keyword in text_lower for keyword in ['music', 'song', 'artist', 'album', 'concert', 'band', 'singer', 'guitar', 'piano']):
+        return 'music'
+    
+    # Default to general entertainment
+    else:
+        return 'general'
+
+def get_category_rpm(category):
+    """Get RPM (Revenue Per Mille) rates by category"""
+    # RPM rates based on industry data (USD per 1000 views)
+    rpm_rates = {
+        'finance': {'rpm': 8.50, 'category': 'Finance & Business'},
+        'tech': {'rpm': 6.20, 'category': 'Technology'},
+        'education': {'rpm': 4.80, 'category': 'Education'},
+        'health': {'rpm': 4.50, 'category': 'Health & Fitness'},
+        'beauty': {'rpm': 3.80, 'category': 'Beauty & Fashion'},
+        'food': {'rpm': 3.20, 'category': 'Food & Cooking'},
+        'travel': {'rpm': 2.90, 'category': 'Travel'},
+        'music': {'rpm': 2.50, 'category': 'Music'},
+        'gaming': {'rpm': 2.20, 'category': 'Gaming'},
+        'entertainment': {'rpm': 1.80, 'category': 'Entertainment'},
+        'general': {'rpm': 2.00, 'category': 'General'}
+    }
+    
+    return rpm_rates.get(category, rpm_rates['general'])
+
+def estimate_geography_multiplier(subscriber_count, category):
+    """Estimate geography multiplier based on channel size and category"""
+    # Larger channels tend to have more global (higher-paying) audiences
+    # Finance and tech channels typically have better geography distribution
+    
+    base_multiplier = 1.0
+    
+    # Category-based adjustments
+    if category in ['finance', 'tech', 'education']:
+        base_multiplier = 1.2  # These niches attract more tier-1 country audiences
+    elif category in ['gaming', 'entertainment']:
+        base_multiplier = 0.9  # More global but often younger demographics
+    
+    # Size-based adjustments (larger channels = more global reach)
+    if subscriber_count > 5000000:
+        size_multiplier = 1.3
+    elif subscriber_count > 1000000:
+        size_multiplier = 1.2
+    elif subscriber_count > 100000:
+        size_multiplier = 1.1
+    else:
+        size_multiplier = 0.95  # Smaller channels often more localized
+    
+    return base_multiplier * size_multiplier
+
+def get_channel_size_multiplier(subscriber_count):
+    """Get revenue multiplier based on channel size"""
+    # Larger channels often have better monetization due to:
+    # - Better audience retention
+    # - More premium ad placements
+    # - Brand deals and sponsorships (not included in AdSense but affects overall RPM)
+    
+    if subscriber_count > 10000000:  # 10M+
+        return 1.4
+    elif subscriber_count > 5000000:  # 5M+
+        return 1.3
+    elif subscriber_count > 1000000:  # 1M+
+        return 1.2
+    elif subscriber_count > 500000:  # 500K+
+        return 1.15
+    elif subscriber_count > 100000:  # 100K+
+        return 1.1
+    elif subscriber_count > 10000:  # 10K+
+        return 1.0
+    else:  # Under 10K
+        return 0.85  # Smaller channels often have lower RPM
+
 # API Routes
 
 @api_router.get("/")
