@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 # Backend URL
-BACKEND_URL = "https://metrics-validator-2.preview.emergentagent.com/api"
+BACKEND_URL = "https://rpm-dashboard-fix.preview.emergentagent.com/api"
 
 class RevenueCalculationAnalyzer:
     def __init__(self):

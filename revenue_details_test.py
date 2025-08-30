@@ -6,7 +6,7 @@ Revenue Details Analysis - Examining the revenueDetails section structure
 import requests
 import json
 
-BACKEND_URL = "https://metrics-validator-2.preview.emergentagent.com/api"
+BACKEND_URL = "https://rpm-dashboard-fix.preview.emergentagent.com/api"
 
 def test_revenue_details_structure():
     """Test the revenueDetails section structure and content"""
