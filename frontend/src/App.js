@@ -31,6 +31,8 @@ function App() {
                 <Route path="/script-generator" element={<AIScriptGenerator />} />
                 <Route path="/content-ideas" element={<ContentIdeas />} />
                 <Route path="/growing-analyzer" element={<GrowingChannelAnalyzer />} />
+                <Route path="/learning-hub" element={<LearningHub />} />
+                <Route path="/community-hub" element={<CommunityHub />} />
                 <Route path="/competitors" element={<CompetitorAnalysis />} />
                 <Route path="/trending" element={<TrendingVideos />} />
                 <Route path="/calendar" element={<ContentCalendar />} />
