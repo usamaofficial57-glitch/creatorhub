@@ -829,7 +829,7 @@ def test_community_hub_apis():
 
 def main():
     """Run all tests"""
-    print(f"{Colors.BOLD}🚀 YouTube Automation Tool Backend API Testing{Colors.ENDC}")
+    print(f"{Colors.BOLD}🚀 YouTube CreatorHub Backend API Testing{Colors.ENDC}")
     print(f"Backend URL: {BACKEND_URL}")
     print(f"Test Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
@@ -859,6 +859,14 @@ def main():
     trending_topics_success, trending_topics_data = test_trending_topics_api()
     all_results.append(trending_topics_success)
     
+    # Test 7: Learning Hub APIs (NEW)
+    learning_results = test_learning_hub_apis()
+    all_results.extend(learning_results)
+    
+    # Test 8: Community Hub APIs (NEW)
+    community_results = test_community_hub_apis()
+    all_results.extend(community_results)
+    
     # Summary
     print(f"\n{Colors.BOLD}=== TEST SUMMARY ==={Colors.ENDC}")
     total_tests = len(all_results)
@@ -871,8 +879,19 @@ def main():
     print(f"{Colors.RED}Failed: {failed_tests}{Colors.ENDC}")
     print(f"Success Rate: {success_rate:.1f}%")
     
+    # Detailed breakdown by feature
+    print(f"\n{Colors.BOLD}=== FEATURE BREAKDOWN ==={Colors.ENDC}")
+    print(f"✅ Dashboard Analytics: {'PASS' if dashboard_success else 'FAIL'}")
+    print(f"✅ Channel Management: {'PASS' if all(channel_results) else 'FAIL'} ({sum(channel_results)}/{len(channel_results)})")
+    print(f"✅ Content Ideas: {'PASS' if all(content_results) else 'FAIL'} ({sum(content_results)}/{len(content_results)})")
+    print(f"✅ Trending Videos: {'PASS' if all(trending_results) else 'FAIL'} ({sum(trending_results)}/{len(trending_results)})")
+    print(f"✅ Competitor Analysis: {'PASS' if all(competitor_results) else 'FAIL'} ({sum(competitor_results)}/{len(competitor_results)})")
+    print(f"✅ Trending Topics: {'PASS' if trending_topics_success else 'FAIL'}")
+    print(f"🆕 Learning Hub: {'PASS' if all(learning_results) else 'FAIL'} ({sum(learning_results)}/{len(learning_results)})")
+    print(f"🆕 Community Hub: {'PASS' if all(community_results) else 'FAIL'} ({sum(community_results)}/{len(community_results)})")
+    
     if success_rate >= 80:
-        print(f"\n{Colors.GREEN}✅ YouTube Automation Tool Backend APIs are working correctly!{Colors.ENDC}")
+        print(f"\n{Colors.GREEN}✅ YouTube CreatorHub Backend APIs are working correctly!{Colors.ENDC}")
         return True
     else:
         print(f"\n{Colors.RED}❌ Some critical issues found in Backend APIs{Colors.ENDC}")
