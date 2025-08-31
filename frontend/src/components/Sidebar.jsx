@@ -10,7 +10,8 @@ import {
   TrendingUp,
   Target,
   UserPlus,
-  Video
+  Video,
+  PenTool
 } from 'lucide-react';
 
 const Sidebar = () => {
