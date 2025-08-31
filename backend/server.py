@@ -1105,7 +1105,7 @@ async def auto_research(request: dict):
         TRENDS: Brief analysis of current trends for this topic"""
         
         response = await chat.send_message(UserMessage(prompt))
-        content = response.message.content
+        content = str(response)
         
         # Parse the response
         keywords = []
