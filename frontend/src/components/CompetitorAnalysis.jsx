@@ -376,21 +376,23 @@ const CompetitorAnalysis = () => {
       </Card>
 
       {/* Competitors Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredCompetitors.map((competitor) => (
-          <Card key={competitor.id} className="p-6 hover:shadow-lg transition-shadow">
-            <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {filteredCompetitors.map((competitor, index) => (
+          <Card key={competitor.id} className="p-8 card-hover bg-white shadow-xl border-0 rounded-3xl" style={{
+            animationDelay: `${index * 0.1}s`
+          }}>
+            <div className="space-y-6">
               {/* Header */}
               <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   <img 
                     src={competitor.thumbnail} 
                     alt={competitor.channelName}
-                    className="w-12 h-12 rounded-full object-cover"
+                    className="w-16 h-16 rounded-2xl object-cover shadow-lg"
                   />
                   <div>
-                    <h3 className="font-semibold text-gray-900">{competitor.channelName}</h3>
-                    <p className="text-sm text-gray-600">{competitor.category}</p>
+                    <h3 className="font-bold text-xl mb-1" style={{color: '#111827'}}>{competitor.channelName}</h3>
+                    <p className="text-sm font-medium" style={{color: '#6B7280'}}>{competitor.category}</p>
                   </div>
                 </div>
                 
@@ -399,17 +401,19 @@ const CompetitorAnalysis = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => toggleNotifications(competitor.id)}
+                    className="rounded-xl"
                   >
                     {competitor.notifications ? (
-                      <Bell className="w-4 h-4 text-blue-600" />
+                      <Bell className="w-4 h-4" style={{color: '#4F46E5'}} />
                     ) : (
-                      <BellOff className="w-4 h-4 text-gray-400" />
+                      <BellOff className="w-4 h-4" style={{color: '#6B7280'}} />
                     )}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => removeCompetitor(competitor.id)}
+                    className="rounded-xl text-red-600 hover:bg-red-50"
                   >
                     ×
                   </Button>
@@ -417,24 +421,24 @@ const CompetitorAnalysis = () => {
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Subscribers:</span>
-                  <span className="font-medium">{formatNumber(competitor.subscriberCount)}</span>
+              <div className="grid grid-cols-2 gap-6 text-sm">
+                <div className="flex items-center justify-between p-4 rounded-2xl" style={{backgroundColor: '#F9FAFB'}}>
+                  <span className="font-medium" style={{color: '#6B7280'}}>Subscribers:</span>
+                  <span className="font-bold text-lg" style={{color: '#111827'}}>{formatNumber(competitor.subscriberCount)}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Videos:</span>
-                  <span className="font-medium">{competitor.videoCount?.toLocaleString()}</span>
+                <div className="flex items-center justify-between p-4 rounded-2xl" style={{backgroundColor: '#F9FAFB'}}>
+                  <span className="font-medium" style={{color: '#6B7280'}}>Videos:</span>
+                  <span className="font-bold text-lg" style={{color: '#111827'}}>{competitor.videoCount?.toLocaleString()}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Avg Views:</span>
-                  <span className="font-medium">{formatNumber(competitor.avgViews)}</span>
+                <div className="flex items-center justify-between p-4 rounded-2xl" style={{backgroundColor: '#F9FAFB'}}>
+                  <span className="font-medium" style={{color: '#6B7280'}}>Avg Views:</span>
+                  <span className="font-bold text-lg" style={{color: '#111827'}}>{formatNumber(competitor.avgViews)}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Growth:</span>
-                  <div className="flex items-center">
-                    <TrendingUp className={`w-4 h-4 mr-1 ${getGrowthColor(competitor.growthRate)}`} />
-                    <span className={`font-medium ${getGrowthColor(competitor.growthRate)}`}>
+                <div className="flex items-center justify-between p-4 rounded-2xl" style={{backgroundColor: '#F9FAFB'}}>
+                  <span className="font-medium" style={{color: '#6B7280'}}>Growth:</span>
+                  <div className="flex items-center space-x-1">
+                    <TrendingUp className={`w-4 h-4 ${getGrowthColor(competitor.growthRate)}`} />
+                    <span className={`font-bold text-lg ${getGrowthColor(competitor.growthRate)}`}>
                       {competitor.growthRate > 0 ? '+' : ''}{competitor.growthRate}%
                     </span>
                   </div>
@@ -442,38 +446,41 @@ const CompetitorAnalysis = () => {
               </div>
 
               {/* Description */}
-              <div>
-                <p className="text-sm text-gray-600 line-clamp-2">
+              <div className="p-4 rounded-2xl" style={{backgroundColor: '#F9FAFB'}}>
+                <p className="text-sm leading-relaxed line-clamp-2" style={{color: '#6B7280'}}>
                   {competitor.description}
                 </p>
               </div>
 
               {/* Tracking Status */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <div className="flex items-center justify-between pt-6 border-t" style={{borderColor: '#F3F4F6'}}>
+                <div className="flex items-center space-x-2 text-sm" style={{color: '#6B7280'}}>
                   <Calendar className="w-4 h-4" />
                   <span>Tracking since {competitor.trackingSince}</span>
                 </div>
                 
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-2">
                   {competitor.notifications ? (
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <CheckCircle className="w-4 h-4" style={{color: '#10B981'}} />
                   ) : (
-                    <AlertCircle className="w-4 h-4 text-gray-400" />
+                    <AlertCircle className="w-4 h-4" style={{color: '#6B7280'}} />
                   )}
-                  <span className={`text-xs ${competitor.notifications ? 'text-green-600' : 'text-gray-500'}`}>
+                  <span className={`text-xs font-medium ${competitor.notifications ? '' : ''}`} style={{
+                    color: competitor.notifications ? '#10B981' : '#6B7280'
+                  }}>
                     {competitor.notifications ? 'Alerts On' : 'Alerts Off'}
                   </span>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex space-x-2 pt-4 border-t border-gray-100">
+              <div className="flex space-x-3 pt-6 border-t" style={{borderColor: '#F3F4F6'}}>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex-1"
+                  className="flex-1 rounded-2xl btn-animate"
                   onClick={() => viewAnalytics(competitor)}
+                  style={{borderColor: '#E5E7EB'}}
                 >
                   <BarChart3 className="w-4 h-4 mr-1" />
                   Analytics
@@ -481,15 +488,20 @@ const CompetitorAnalysis = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex-1"
+                  className="flex-1 rounded-2xl btn-animate"
                   onClick={() => window.open(`https://youtube.com/channel/${competitor.id}`, '_blank')}
+                  style={{borderColor: '#E5E7EB'}}
                 >
                   <ExternalLink className="w-4 h-4 mr-1" />
                   Visit
                 </Button>
                 <Button 
                   size="sm" 
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  className="flex-1 rounded-2xl btn-animate shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5, #10B981)',
+                    borderColor: 'transparent'
+                  }}
                 >
                   Schedule
                 </Button>
@@ -501,10 +513,15 @@ const CompetitorAnalysis = () => {
 
       {/* Empty State */}
       {filteredCompetitors.length === 0 && !loading && (
-        <Card className="p-12 text-center">
-          <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No competitors found</h3>
-          <p className="text-gray-600 mb-6">
+        <Card className="p-16 text-center bg-white shadow-xl border-0 rounded-3xl card-hover">
+          <div 
+            className="w-20 h-20 rounded-2xl mx-auto mb-8 flex items-center justify-center shadow-lg"
+            style={{backgroundColor: '#4F46E520'}}
+          >
+            <Users className="w-10 h-10" style={{color: '#4F46E5'}} />
+          </div>
+          <h3 className="text-2xl font-bold mb-4" style={{color: '#111827'}}>No competitors found</h3>
+          <p className="text-lg mb-8" style={{color: '#6B7280'}}>
             {competitors.length === 0 
               ? "Start tracking your competitors by adding their YouTube channels."
               : "No competitors match your search criteria."
@@ -512,9 +529,13 @@ const CompetitorAnalysis = () => {
           </p>
           <Button 
             onClick={() => setNewCompetitorUrl('https://youtube.com/')}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            className="px-8 py-4 rounded-2xl font-bold btn-animate shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, #4F46E5, #10B981)',
+              borderColor: 'transparent'
+            }}
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-5 h-5 mr-2" />
             Add First Competitor
           </Button>
         </Card>
