@@ -464,6 +464,369 @@ def test_trending_topics_api():
         log_test("GET /api/trending-topics - Exception", "FAIL", f"Error: {str(e)}")
         return False, None
 
+def test_learning_hub_apis():
+    """Test Learning Hub APIs - Courses and Workflows"""
+    print(f"\n{Colors.BOLD}=== Testing Learning Hub APIs ==={Colors.ENDC}")
+    
+    results = []
+    
+    # Test 1: GET /api/learning/courses
+    try:
+        print(f"\n{Colors.BLUE}Testing Learning Courses API{Colors.ENDC}")
+        
+        response = requests.get(f"{BACKEND_URL}/learning/courses", timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify response structure
+            if 'courses' in data and isinstance(data['courses'], list):
+                courses = data['courses']
+                log_test("GET /api/learning/courses - Response Structure", "PASS", 
+                        f"Returned {len(courses)} courses")
+                
+                # Verify course data structure
+                if courses:
+                    sample_course = courses[0]
+                    required_fields = ['id', 'title', 'description', 'instructor', 'duration', 'lessons', 'level', 'rating', 'students']
+                    missing_fields = [field for field in required_fields if field not in sample_course]
+                    
+                    if not missing_fields:
+                        log_test("Learning Courses - Data Structure", "PASS", 
+                                f"Sample: '{sample_course.get('title')}' by {sample_course.get('instructor')} "
+                                f"({sample_course.get('lessons')} lessons, {sample_course.get('students')} students)")
+                        
+                        # Verify specific courses exist
+                        course_titles = [course.get('title', '') for course in courses]
+                        expected_courses = ['Faceless YouTube Mastery', 'YouTube Automation Mastery']
+                        found_courses = [title for title in expected_courses if any(expected in title for expected in course_titles)]
+                        
+                        if len(found_courses) >= 2:
+                            log_test("Learning Courses - Content Verification", "PASS", 
+                                    f"Found expected courses: {', '.join(found_courses)}")
+                            results.append(True)
+                        else:
+                            log_test("Learning Courses - Content Verification", "FAIL", 
+                                    f"Missing expected courses. Found: {', '.join(course_titles)}")
+                            results.append(False)
+                    else:
+                        log_test("Learning Courses - Data Structure", "FAIL", 
+                                f"Missing fields: {missing_fields}")
+                        results.append(False)
+                else:
+                    log_test("Learning Courses - Content", "FAIL", "No courses returned")
+                    results.append(False)
+            else:
+                log_test("GET /api/learning/courses - Response Structure", "FAIL", 
+                        f"Invalid response structure: {data}")
+                results.append(False)
+        else:
+            log_test("GET /api/learning/courses - HTTP Status", "FAIL", 
+                    f"Status: {response.status_code}, Response: {response.text[:200]}")
+            results.append(False)
+            
+    except requests.exceptions.Timeout:
+        log_test("GET /api/learning/courses - Timeout", "FAIL", "Request timed out after 30 seconds")
+        results.append(False)
+    except Exception as e:
+        log_test("GET /api/learning/courses - Exception", "FAIL", f"Error: {str(e)}")
+        results.append(False)
+    
+    # Test 2: GET /api/learning/workflows
+    try:
+        print(f"\n{Colors.BLUE}Testing Learning Workflows API{Colors.ENDC}")
+        
+        response = requests.get(f"{BACKEND_URL}/learning/workflows", timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify response structure
+            if 'workflows' in data and isinstance(data['workflows'], list):
+                workflows = data['workflows']
+                log_test("GET /api/learning/workflows - Response Structure", "PASS", 
+                        f"Returned {len(workflows)} workflows")
+                
+                # Verify workflow data structure
+                if workflows:
+                    sample_workflow = workflows[0]
+                    required_fields = ['id', 'name', 'description', 'steps', 'status', 'last_run', 'success_rate']
+                    missing_fields = [field for field in required_fields if field not in sample_workflow]
+                    
+                    if not missing_fields:
+                        log_test("Learning Workflows - Data Structure", "PASS", 
+                                f"Sample: '{sample_workflow.get('name')}' "
+                                f"({sample_workflow.get('steps')} steps, {sample_workflow.get('success_rate')}% success rate)")
+                        
+                        # Verify workflow content
+                        workflow_names = [wf.get('name', '') for wf in workflows]
+                        expected_workflows = ['Content Pipeline', 'Analytics Report', 'Competitor Monitoring']
+                        found_workflows = [name for name in workflow_names if any(expected.lower() in name.lower() for expected in expected_workflows)]
+                        
+                        if len(found_workflows) >= 2:
+                            log_test("Learning Workflows - Content Verification", "PASS", 
+                                    f"Found expected workflows: {', '.join(found_workflows)}")
+                            results.append(True)
+                        else:
+                            log_test("Learning Workflows - Content Verification", "FAIL", 
+                                    f"Missing expected workflows. Found: {', '.join(workflow_names)}")
+                            results.append(False)
+                    else:
+                        log_test("Learning Workflows - Data Structure", "FAIL", 
+                                f"Missing fields: {missing_fields}")
+                        results.append(False)
+                else:
+                    log_test("Learning Workflows - Content", "FAIL", "No workflows returned")
+                    results.append(False)
+            else:
+                log_test("GET /api/learning/workflows - Response Structure", "FAIL", 
+                        f"Invalid response structure: {data}")
+                results.append(False)
+        else:
+            log_test("GET /api/learning/workflows - HTTP Status", "FAIL", 
+                    f"Status: {response.status_code}, Response: {response.text[:200]}")
+            results.append(False)
+            
+    except requests.exceptions.Timeout:
+        log_test("GET /api/learning/workflows - Timeout", "FAIL", "Request timed out after 30 seconds")
+        results.append(False)
+    except Exception as e:
+        log_test("GET /api/learning/workflows - Exception", "FAIL", f"Error: {str(e)}")
+        results.append(False)
+    
+    return results
+
+def test_community_hub_apis():
+    """Test Community Hub APIs - Discussions, Creators, and Stats"""
+    print(f"\n{Colors.BOLD}=== Testing Community Hub APIs ==={Colors.ENDC}")
+    
+    results = []
+    
+    # Test 1: GET /api/community/discussions (without filters)
+    try:
+        print(f"\n{Colors.BLUE}Testing Community Discussions API (No Filters){Colors.ENDC}")
+        
+        response = requests.get(f"{BACKEND_URL}/community/discussions", timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify response structure
+            if 'discussions' in data and isinstance(data['discussions'], list):
+                discussions = data['discussions']
+                log_test("GET /api/community/discussions - Response Structure", "PASS", 
+                        f"Returned {len(discussions)} discussions")
+                
+                # Verify discussion data structure
+                if discussions:
+                    sample_discussion = discussions[0]
+                    required_fields = ['id', 'title', 'content', 'author', 'category', 'replies', 'likes', 'views', 'timeAgo']
+                    missing_fields = [field for field in required_fields if field not in sample_discussion]
+                    
+                    if not missing_fields:
+                        author = sample_discussion.get('author', {})
+                        log_test("Community Discussions - Data Structure", "PASS", 
+                                f"Sample: '{sample_discussion.get('title')[:50]}...' by {author.get('name', 'Unknown')} "
+                                f"({sample_discussion.get('replies')} replies, {sample_discussion.get('likes')} likes)")
+                        results.append(True)
+                    else:
+                        log_test("Community Discussions - Data Structure", "FAIL", 
+                                f"Missing fields: {missing_fields}")
+                        results.append(False)
+                else:
+                    log_test("Community Discussions - Content", "FAIL", "No discussions returned")
+                    results.append(False)
+            else:
+                log_test("GET /api/community/discussions - Response Structure", "FAIL", 
+                        f"Invalid response structure: {data}")
+                results.append(False)
+        else:
+            log_test("GET /api/community/discussions - HTTP Status", "FAIL", 
+                    f"Status: {response.status_code}, Response: {response.text[:200]}")
+            results.append(False)
+            
+    except requests.exceptions.Timeout:
+        log_test("GET /api/community/discussions - Timeout", "FAIL", "Request timed out after 30 seconds")
+        results.append(False)
+    except Exception as e:
+        log_test("GET /api/community/discussions - Exception", "FAIL", f"Error: {str(e)}")
+        results.append(False)
+    
+    # Test 2: GET /api/community/discussions (with category filter)
+    try:
+        print(f"\n{Colors.BLUE}Testing Community Discussions API (Category Filter){Colors.ENDC}")
+        
+        response = requests.get(f"{BACKEND_URL}/community/discussions?category=automation", timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            if 'discussions' in data and isinstance(data['discussions'], list):
+                discussions = data['discussions']
+                log_test("GET /api/community/discussions (category=automation) - Response", "PASS", 
+                        f"Returned {len(discussions)} discussions with category filter")
+                
+                # Verify filtering works
+                if discussions:
+                    automation_discussions = [d for d in discussions if d.get('category') == 'automation']
+                    if len(automation_discussions) == len(discussions):
+                        log_test("Community Discussions - Category Filtering", "PASS", 
+                                "All returned discussions match automation category")
+                        results.append(True)
+                    else:
+                        log_test("Community Discussions - Category Filtering", "FAIL", 
+                                f"Filter not working properly: {len(automation_discussions)}/{len(discussions)} match")
+                        results.append(False)
+                else:
+                    log_test("Community Discussions - Category Filtering", "INFO", 
+                            "No automation discussions found (acceptable)")
+                    results.append(True)
+            else:
+                log_test("GET /api/community/discussions (category filter) - Response Structure", "FAIL", 
+                        f"Invalid response structure: {data}")
+                results.append(False)
+        else:
+            log_test("GET /api/community/discussions (category filter) - HTTP Status", "FAIL", 
+                    f"Status: {response.status_code}")
+            results.append(False)
+            
+    except Exception as e:
+        log_test("GET /api/community/discussions (category filter) - Exception", "FAIL", f"Error: {str(e)}")
+        results.append(False)
+    
+    # Test 3: GET /api/community/discussions (with search filter)
+    try:
+        print(f"\n{Colors.BLUE}Testing Community Discussions API (Search Filter){Colors.ENDC}")
+        
+        response = requests.get(f"{BACKEND_URL}/community/discussions?search=tools", timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            if 'discussions' in data and isinstance(data['discussions'], list):
+                discussions = data['discussions']
+                log_test("GET /api/community/discussions (search=tools) - Response", "PASS", 
+                        f"Returned {len(discussions)} discussions with search filter")
+                
+                # Verify search filtering works
+                if discussions:
+                    search_matches = [d for d in discussions if 'tools' in d.get('title', '').lower() or 'tools' in d.get('content', '').lower()]
+                    if len(search_matches) == len(discussions):
+                        log_test("Community Discussions - Search Filtering", "PASS", 
+                                "All returned discussions match search term 'tools'")
+                        results.append(True)
+                    else:
+                        log_test("Community Discussions - Search Filtering", "FAIL", 
+                                f"Search filter not working properly: {len(search_matches)}/{len(discussions)} match")
+                        results.append(False)
+                else:
+                    log_test("Community Discussions - Search Filtering", "INFO", 
+                            "No discussions found for 'tools' search (acceptable)")
+                    results.append(True)
+            else:
+                log_test("GET /api/community/discussions (search filter) - Response Structure", "FAIL", 
+                        f"Invalid response structure: {data}")
+                results.append(False)
+        else:
+            log_test("GET /api/community/discussions (search filter) - HTTP Status", "FAIL", 
+                    f"Status: {response.status_code}")
+            results.append(False)
+            
+    except Exception as e:
+        log_test("GET /api/community/discussions (search filter) - Exception", "FAIL", f"Error: {str(e)}")
+        results.append(False)
+    
+    # Test 4: GET /api/community/creators
+    try:
+        print(f"\n{Colors.BLUE}Testing Community Creators API{Colors.ENDC}")
+        
+        response = requests.get(f"{BACKEND_URL}/community/creators", timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify response structure
+            if 'creators' in data and isinstance(data['creators'], list):
+                creators = data['creators']
+                log_test("GET /api/community/creators - Response Structure", "PASS", 
+                        f"Returned {len(creators)} featured creators")
+                
+                # Verify creator data structure
+                if creators:
+                    sample_creator = creators[0]
+                    required_fields = ['id', 'name', 'username', 'subscribers', 'niche', 'avatar', 'growth', 'isOnline', 'level']
+                    missing_fields = [field for field in required_fields if field not in sample_creator]
+                    
+                    if not missing_fields:
+                        log_test("Community Creators - Data Structure", "PASS", 
+                                f"Sample: {sample_creator.get('name')} ({sample_creator.get('username')}) "
+                                f"- {sample_creator.get('subscribers')} subscribers, {sample_creator.get('niche')} niche")
+                        results.append(True)
+                    else:
+                        log_test("Community Creators - Data Structure", "FAIL", 
+                                f"Missing fields: {missing_fields}")
+                        results.append(False)
+                else:
+                    log_test("Community Creators - Content", "FAIL", "No creators returned")
+                    results.append(False)
+            else:
+                log_test("GET /api/community/creators - Response Structure", "FAIL", 
+                        f"Invalid response structure: {data}")
+                results.append(False)
+        else:
+            log_test("GET /api/community/creators - HTTP Status", "FAIL", 
+                    f"Status: {response.status_code}, Response: {response.text[:200]}")
+            results.append(False)
+            
+    except requests.exceptions.Timeout:
+        log_test("GET /api/community/creators - Timeout", "FAIL", "Request timed out after 30 seconds")
+        results.append(False)
+    except Exception as e:
+        log_test("GET /api/community/creators - Exception", "FAIL", f"Error: {str(e)}")
+        results.append(False)
+    
+    # Test 5: GET /api/community/stats
+    try:
+        print(f"\n{Colors.BLUE}Testing Community Stats API{Colors.ENDC}")
+        
+        response = requests.get(f"{BACKEND_URL}/community/stats", timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify response structure
+            required_fields = ['activeMembers', 'discussions', 'successStories', 'expertsOnline']
+            missing_fields = [field for field in required_fields if field not in data]
+            
+            if not missing_fields:
+                log_test("GET /api/community/stats - Response Structure", "PASS", 
+                        f"All required stats fields present")
+                
+                # Verify stats content
+                log_test("Community Stats - Content Verification", "PASS", 
+                        f"Active Members: {data.get('activeMembers', 0):,}, "
+                        f"Discussions: {data.get('discussions', 0):,}, "
+                        f"Success Stories: {data.get('successStories', 0):,}, "
+                        f"Experts Online: {data.get('expertsOnline', 0):,}")
+                results.append(True)
+            else:
+                log_test("GET /api/community/stats - Response Structure", "FAIL", 
+                        f"Missing fields: {missing_fields}")
+                results.append(False)
+        else:
+            log_test("GET /api/community/stats - HTTP Status", "FAIL", 
+                    f"Status: {response.status_code}, Response: {response.text[:200]}")
+            results.append(False)
+            
+    except requests.exceptions.Timeout:
+        log_test("GET /api/community/stats - Timeout", "FAIL", "Request timed out after 30 seconds")
+        results.append(False)
+    except Exception as e:
+        log_test("GET /api/community/stats - Exception", "FAIL", f"Error: {str(e)}")
+        results.append(False)
+    
+    return results
+
 def main():
     """Run all tests"""
     print(f"{Colors.BOLD}🚀 YouTube Automation Tool Backend API Testing{Colors.ENDC}")
