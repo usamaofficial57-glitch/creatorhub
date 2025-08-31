@@ -23,6 +23,7 @@ const Sidebar = () => {
     { icon: BarChart3, label: 'Dashboard', path: '/', category: 'main' },
     { icon: PenTool, label: 'AI Script Generator', path: '/script-generator', category: 'create' },
     { icon: Lightbulb, label: 'Content Ideas', path: '/content-ideas', category: 'create' },
+    { icon: Zap, label: 'Growing Channel Analyzer', path: '/growing-analyzer', category: 'analyze' },
     { icon: Users, label: 'Competitor Analysis', path: '/competitors', category: 'analyze' },
     { icon: TrendingUp, label: 'Trending Videos', path: '/trending', category: 'analyze' },
     { icon: Calendar, label: 'Content Calendar', path: '/calendar', category: 'manage' },
