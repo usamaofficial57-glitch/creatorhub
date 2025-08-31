@@ -449,98 +449,132 @@ const ContentIdeas = () => {
       </Card>
 
       {/* Content Ideas Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredIdeas.map((idea) => (
-          <Card key={idea.id} className="p-6 hover:shadow-lg transition-all duration-200 group">
-            <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {filteredIdeas.map((idea, index) => (
+          <Card key={idea.id} className="p-8 card-hover bg-white shadow-xl border-0 rounded-3xl group" style={{
+            animationDelay: `${index * 0.1}s`
+          }}>
+            <div className="space-y-6">
               {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="text-xs">
+                  <Badge className="px-3 py-1 rounded-full font-bold text-xs" style={{
+                    backgroundColor: '#6B728020',
+                    color: '#6B7280',
+                    border: 'none'
+                  }}>
                     {idea.category}
                   </Badge>
                   {idea.ai_generated && (
-                    <Badge className="text-xs bg-purple-100 text-purple-800">
+                    <Badge className="px-3 py-1 rounded-full font-bold text-xs" style={{
+                      backgroundColor: '#8B5CF620',
+                      color: '#8B5CF6',
+                      border: 'none'
+                    }}>
                       <Sparkles className="w-3 h-3 mr-1" />
                       AI
                     </Badge>
                   )}
                 </div>
-                <Badge className={`text-xs ${getViralPotentialColor(idea.viral_potential)}`}>
+                <Badge className={`px-3 py-1 rounded-full font-bold text-xs ${getViralPotentialColor(idea.viral_potential)}`} style={{
+                  backgroundColor: idea.viral_potential >= 90 ? '#FEE2E2' : 
+                                   idea.viral_potential >= 75 ? '#FED7AA' :
+                                   idea.viral_potential >= 60 ? '#FEF3C7' : '#F3F4F6',
+                  color: idea.viral_potential >= 90 ? '#DC2626' :
+                         idea.viral_potential >= 75 ? '#EA580C' :
+                         idea.viral_potential >= 60 ? '#D97706' : '#6B7280',
+                  border: 'none'
+                }}>
                   {idea.viral_potential}% viral
                 </Badge>
               </div>
 
               {/* Content */}
               <div>
-                <h3 className="font-semibold text-gray-900 leading-tight line-clamp-2 mb-2">
+                <h3 className="font-bold text-xl leading-tight line-clamp-2 mb-4" style={{color: '#111827'}}>
                   {idea.title}
                 </h3>
-                <p className="text-sm text-gray-600 line-clamp-3">
+                <p className="text-sm leading-relaxed line-clamp-3" style={{color: '#6B7280'}}>
                   {idea.description}
                 </p>
               </div>
 
               {/* Metrics */}
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">Difficulty:</span>
-                  <Badge className={`ml-2 text-xs ${getDifficultyColor(idea.difficulty)}`}>
+                <div className="flex items-center space-x-2">
+                  <span style={{color: '#6B7280'}}>Difficulty:</span>
+                  <Badge className={`text-xs px-2 py-1 rounded-full font-bold ${getDifficultyColor(idea.difficulty)}`} style={{
+                    backgroundColor: idea.difficulty?.toLowerCase() === 'easy' ? '#D1FAE5' :
+                                     idea.difficulty?.toLowerCase() === 'medium' ? '#FEF3C7' : '#FEE2E2',
+                    color: idea.difficulty?.toLowerCase() === 'easy' ? '#065F46' :
+                           idea.difficulty?.toLowerCase() === 'medium' ? '#92400E' : '#991B1B',
+                    border: 'none'
+                  }}>
                     {idea.difficulty}
                   </Badge>
                 </div>
-                <div>
-                  <span className="text-gray-500">Trend:</span>
-                  <span className="ml-2 font-medium">{idea.trend}</span>
+                <div className="flex items-center space-x-2">
+                  <span style={{color: '#6B7280'}}>Trend:</span>
+                  <span className="font-bold text-xs" style={{color: '#111827'}}>{idea.trend}</span>
                 </div>
-                <div className="col-span-2">
-                  <span className="text-gray-500">Est. Views:</span>
-                  <span className="ml-2 font-medium">{idea.estimated_views}</span>
+                <div className="col-span-2 flex items-center space-x-2">
+                  <span style={{color: '#6B7280'}}>Est. Views:</span>
+                  <span className="font-bold text-xs" style={{color: '#111827'}}>{idea.estimated_views}</span>
                 </div>
               </div>
 
               {/* Tags */}
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-2">
                 {idea.tags?.slice(0, 4).map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
+                  <Badge key={index} className="px-2 py-1 rounded-full font-medium text-xs" style={{
+                    backgroundColor: '#4F46E510',
+                    color: '#4F46E5',
+                    border: 'none'
+                  }}>
                     #{tag}
                   </Badge>
                 ))}
               </div>
 
               {/* Viral Potential Bar */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Viral Potential</span>
-                  <span className="font-medium">{idea.viral_potential}%</span>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="font-medium" style={{color: '#6B7280'}}>Viral Potential</span>
+                  <span className="font-bold" style={{color: '#111827'}}>{idea.viral_potential}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full rounded-full h-3 shadow-inner" style={{backgroundColor: '#E5E7EB'}}>
                   <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      idea.viral_potential >= 90 ? 'bg-red-500' :
-                      idea.viral_potential >= 75 ? 'bg-orange-500' :
-                      idea.viral_potential >= 60 ? 'bg-yellow-500' : 'bg-gray-500'
-                    }`}
-                    style={{ width: `${idea.viral_potential}%` }}
+                    className="h-3 rounded-full transition-all duration-500 shadow-sm"
+                    style={{ 
+                      width: `${idea.viral_potential}%`,
+                      backgroundColor: idea.viral_potential >= 90 ? '#DC2626' :
+                                       idea.viral_potential >= 75 ? '#EA580C' :
+                                       idea.viral_potential >= 60 ? '#D97706' : '#6B7280'
+                    }}
                   />
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex space-x-2 pt-4 border-t border-gray-100">
+              <div className="flex space-x-3 pt-6 border-t" style={{borderColor: '#F3F4F6'}}>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex-1"
+                  className="flex-1 rounded-2xl btn-animate"
                   onClick={() => saveIdea(idea.id)}
+                  style={{borderColor: '#E5E7EB'}}
                 >
                   <Bookmark className="w-4 h-4 mr-1" />
                   Save
                 </Button>
                 <Button 
                   size="sm" 
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  className="flex-1 rounded-2xl btn-animate shadow-lg"
                   onClick={() => useIdea(idea.id)}
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5, #10B981)',
+                    borderColor: 'transparent'
+                  }}
                 >
                   <Lightbulb className="w-4 h-4 mr-1" />
                   Use Idea
@@ -553,17 +587,26 @@ const ContentIdeas = () => {
 
       {/* Empty State */}
       {filteredIdeas.length === 0 && !loading && (
-        <Card className="p-12 text-center">
-          <Sparkles className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No content ideas found</h3>
-          <p className="text-gray-600 mb-6">
+        <Card className="p-16 text-center bg-white shadow-xl border-0 rounded-3xl card-hover">
+          <div 
+            className="w-20 h-20 rounded-2xl mx-auto mb-8 flex items-center justify-center shadow-lg"
+            style={{backgroundColor: '#4F46E520'}}
+          >
+            <Sparkles className="w-10 h-10" style={{color: '#4F46E5'}} />
+          </div>
+          <h3 className="text-2xl font-bold mb-4" style={{color: '#111827'}}>No content ideas found</h3>
+          <p className="text-lg mb-8" style={{color: '#6B7280'}}>
             Try generating new ideas or adjusting your search filters.
           </p>
           <Button 
             onClick={() => setTopic('content creation')}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            className="px-8 py-4 rounded-2xl font-bold btn-animate shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, #4F46E5, #10B981)',
+              borderColor: 'transparent'
+            }}
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-5 h-5 mr-2" />
             Generate Ideas
           </Button>
         </Card>
