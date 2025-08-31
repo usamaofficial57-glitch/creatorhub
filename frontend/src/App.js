@@ -19,22 +19,24 @@ function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex min-h-screen" style={{backgroundColor: '#F3F4F6'}}>
           <Sidebar />
-          <main className="flex-1 ml-64">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/script-generator" element={<AIScriptGenerator />} />
-              <Route path="/content-ideas" element={<ContentIdeas />} />
-              <Route path="/competitors" element={<CompetitorAnalysis />} />
-              <Route path="/trending" element={<TrendingVideos />} />
-              <Route path="/calendar" element={<ContentCalendar />} />
-              <Route path="/niche-research" element={<NicheResearch />} />
-              <Route path="/analytics" element={<ChannelAnalytics />} />
-              <Route path="/team" element={<TeamManagement />} />
-              <Route path="/seo" element={<SEOTools />} />
-              <Route path="/settings" element={<Settings />} />
-            </Routes>
+          <main className="flex-1 ml-64 min-h-screen transition-all duration-300">
+            <div className="animate-in fade-in duration-300">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/script-generator" element={<AIScriptGenerator />} />
+                <Route path="/content-ideas" element={<ContentIdeas />} />
+                <Route path="/competitors" element={<CompetitorAnalysis />} />
+                <Route path="/trending" element={<TrendingVideos />} />
+                <Route path="/calendar" element={<ContentCalendar />} />
+                <Route path="/niche-research" element={<NicheResearch />} />
+                <Route path="/analytics" element={<ChannelAnalytics />} />
+                <Route path="/team" element={<TeamManagement />} />
+                <Route path="/seo" element={<SEOTools />} />
+                <Route path="/settings" element={<Settings />} />
+              </Routes>
+            </div>
           </main>
         </div>
         <Toaster />
