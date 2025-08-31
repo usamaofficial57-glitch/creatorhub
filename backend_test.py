@@ -33,6 +33,395 @@ def log_test(test_name, status, details=""):
     if details:
         print(f"  {details}")
 
+def test_dashboard_analytics_api():
+    """Test GET /api/analytics/dashboard endpoint"""
+    print(f"\n{Colors.BOLD}=== Testing Dashboard Analytics API ==={Colors.ENDC}")
+    
+    try:
+        # Test dashboard analytics without connected channels
+        response = requests.get(f"{BACKEND_URL}/analytics/dashboard", timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Verify response structure
+            required_fields = ['connected', 'totalViews', 'totalSubscribers', 'avgViewDuration', 'revenueThisMonth']
+            missing_fields = [field for field in required_fields if field not in data]
+            
+            if not missing_fields:
+                log_test("GET /api/analytics/dashboard - Response Structure", "PASS", 
+                        f"All required fields present. Connected: {data.get('connected')}")
+                
+                # Check if connected or not
+                if data.get('connected'):
+                    # Verify connected state fields
+                    connected_fields = ['channelInfo', 'topPerformingVideo', 'monthlyGrowth']
+                    connected_missing = [field for field in connected_fields if field not in data]
+                    
+                    if not connected_missing:
+                        channel_info = data.get('channelInfo', {})
+                        log_test("Dashboard Analytics - Connected State", "PASS", 
+                                f"Channel: {channel_info.get('name', 'Unknown')}, "
+                                f"Views: {data.get('totalViews', 0):,}, "
+                                f"Subscribers: {data.get('totalSubscribers', 0):,}, "
+                                f"Revenue: ${data.get('revenueThisMonth', 0):,}")
+                        return True, data
+                    else:
+                        log_test("Dashboard Analytics - Connected State", "FAIL", 
+                                f"Missing connected fields: {connected_missing}")
+                        return False, data
+                else:
+                    # Verify no-channels state
+                    log_test("Dashboard Analytics - No Channels State", "PASS", 
+                            f"Message: {data.get('message', 'No message')}")
+                    return True, data
+            else:
+                log_test("GET /api/analytics/dashboard - Response Structure", "FAIL", 
+                        f"Missing fields: {missing_fields}")
+                return False, data
+        else:
+            log_test("GET /api/analytics/dashboard - HTTP Status", "FAIL", 
+                    f"Status: {response.status_code}, Response: {response.text}")
+            return False, None
+            
+    except requests.exceptions.Timeout:
+        log_test("GET /api/analytics/dashboard - Timeout", "FAIL", "Request timed out after 30 seconds")
+        return False, None
+    except Exception as e:
+        log_test("GET /api/analytics/dashboard - Exception", "FAIL", f"Error: {str(e)}")
+        return False, None
+
+def test_channel_management_apis():
+    """Test Channel Management APIs"""
+    print(f"\n{Colors.BOLD}=== Testing Channel Management APIs ==={Colors.ENDC}")
+    
+    results = []
+    
+    # Test 1: GET /api/channels - List connected channels
+    try:
+        response = requests.get(f"{BACKEND_URL}/channels", timeout=30)
+        
+        if response.status_code == 200:
+            channels = response.json()
+            
+            if isinstance(channels, list):
+                log_test("GET /api/channels - Response Structure", "PASS", 
+                        f"Returned {len(channels)} connected channels")
+                
+                # If channels exist, verify structure
+                if channels:
+                    sample_channel = channels[0]
+                    required_fields = ['id', 'channel_id', 'channel_name', 'subscriber_count', 'is_primary']
+                    missing_fields = [field for field in required_fields if field not in sample_channel]
+                    
+                    if not missing_fields:
+                        log_test("Channel Data Structure", "PASS", 
+                                f"Sample channel: {sample_channel.get('channel_name')} "
+                                f"({sample_channel.get('subscriber_count', 0):,} subscribers)")
+                        results.append(True)
+                    else:
+                        log_test("Channel Data Structure", "FAIL", 
+                                f"Missing fields: {missing_fields}")
+                        results.append(False)
+                else:
+                    log_test("Connected Channels", "INFO", "No channels currently connected")
+                    results.append(True)
+            else:
+                log_test("GET /api/channels - Response Structure", "FAIL", 
+                        f"Expected list, got: {type(channels)}")
+                results.append(False)
+        else:
+            log_test("GET /api/channels - HTTP Status", "FAIL", 
+                    f"Status: {response.status_code}")
+            results.append(False)
+            
+    except Exception as e:
+        log_test("GET /api/channels - Exception", "FAIL", f"Error: {str(e)}")
+        results.append(False)
+    
+    # Test 2: POST /api/channels/connect - Connect a channel
+    test_channels = [
+        {
+            "name": "Channel ID Format",
+            "payload": {"channel_id": "UCBJycsmduvYEL83R_U4JriQ"}  # Marques Brownlee
+        },
+        {
+            "name": "Channel URL Format", 
+            "payload": {"channel_url": "https://youtube.com/channel/UCX6OQ3DkcsbYNE6H8uQQuVA"}  # MrBeast
+        },
+        {
+            "name": "Handle Format",
+            "payload": {"channel_handle": "@TechLinked"}  # TechLinked
+        }
+    ]
+    
+    connected_channels = []
+    
+    for test_case in test_channels:
+        try:
+            print(f"\n{Colors.BLUE}Testing Channel Connection: {test_case['name']}{Colors.ENDC}")
+            
+            response = requests.post(
+                f"{BACKEND_URL}/channels/connect",
+                json=test_case['payload'],
+                timeout=45,
+                headers={'Content-Type': 'application/json'}
+            )
+            
+            if response.status_code == 200:
+                channel_data = response.json()
+                
+                # Verify response structure
+                required_fields = ['id', 'channel_id', 'channel_name', 'subscriber_count']
+                missing_fields = [field for field in required_fields if field not in channel_data]
+                
+                if not missing_fields:
+                    log_test(f"Channel Connection - {test_case['name']}", "PASS", 
+                            f"Connected: {channel_data.get('channel_name')} "
+                            f"({channel_data.get('subscriber_count', 0):,} subscribers)")
+                    connected_channels.append(channel_data)
+                    results.append(True)
+                else:
+                    log_test(f"Channel Connection - {test_case['name']}", "FAIL", 
+                            f"Missing fields: {missing_fields}")
+                    results.append(False)
+            elif response.status_code == 400:
+                # Channel might already be connected
+                error_data = response.json()
+                if "already connected" in error_data.get('detail', '').lower():
+                    log_test(f"Channel Connection - {test_case['name']}", "INFO", 
+                            "Channel already connected (expected)")
+                    results.append(True)
+                else:
+                    log_test(f"Channel Connection - {test_case['name']}", "FAIL", 
+                            f"Error: {error_data.get('detail', 'Unknown error')}")
+                    results.append(False)
+            else:
+                log_test(f"Channel Connection - {test_case['name']}", "FAIL", 
+                        f"Status: {response.status_code}, Response: {response.text[:200]}")
+                results.append(False)
+                
+        except requests.exceptions.Timeout:
+            log_test(f"Channel Connection - {test_case['name']} - Timeout", "FAIL", 
+                    "Request timed out after 45 seconds")
+            results.append(False)
+        except Exception as e:
+            log_test(f"Channel Connection - {test_case['name']} - Exception", "FAIL", f"Error: {str(e)}")
+            results.append(False)
+    
+    return results
+
+def test_content_ideas_api():
+    """Test POST /api/content/generate-ideas endpoint"""
+    print(f"\n{Colors.BOLD}=== Testing Content Ideas API ==={Colors.ENDC}")
+    
+    test_cases = [
+        {
+            "name": "Tech Content Ideas",
+            "payload": {
+                "topic": "YouTube automation tools",
+                "category": "technology",
+                "count": 3
+            }
+        },
+        {
+            "name": "Business Content Ideas",
+            "payload": {
+                "topic": "Digital marketing strategies",
+                "category": "business",
+                "count": 5
+            }
+        }
+    ]
+    
+    results = []
+    
+    for test_case in test_cases:
+        try:
+            print(f"\n{Colors.BLUE}Testing: {test_case['name']}{Colors.ENDC}")
+            
+            response = requests.post(
+                f"{BACKEND_URL}/content/generate-ideas",
+                json=test_case['payload'],
+                timeout=60,
+                headers={'Content-Type': 'application/json'}
+            )
+            
+            if response.status_code == 200:
+                ideas = response.json()
+                
+                if isinstance(ideas, list) and len(ideas) > 0:
+                    # Verify idea structure
+                    sample_idea = ideas[0]
+                    required_fields = ['id', 'title', 'description', 'category', 'viral_potential', 'tags']
+                    missing_fields = [field for field in required_fields if field not in sample_idea]
+                    
+                    if not missing_fields:
+                        log_test(f"{test_case['name']} - Response Structure", "PASS", 
+                                f"Generated {len(ideas)} ideas")
+                        
+                        # Verify content quality
+                        sample_title = sample_idea.get('title', '')
+                        sample_viral_potential = sample_idea.get('viral_potential', 0)
+                        
+                        log_test(f"{test_case['name']} - Content Quality", "PASS", 
+                                f"Sample: '{sample_title}' (Viral: {sample_viral_potential}%)")
+                        results.append(True)
+                    else:
+                        log_test(f"{test_case['name']} - Response Structure", "FAIL", 
+                                f"Missing fields: {missing_fields}")
+                        results.append(False)
+                else:
+                    log_test(f"{test_case['name']} - Response Content", "FAIL", 
+                            f"Expected list with ideas, got: {type(ideas)}")
+                    results.append(False)
+            else:
+                log_test(f"{test_case['name']} - HTTP Status", "FAIL", 
+                        f"Status: {response.status_code}, Response: {response.text[:200]}")
+                results.append(False)
+                
+        except requests.exceptions.Timeout:
+            log_test(f"{test_case['name']} - Timeout", "FAIL", "Request timed out after 60 seconds")
+            results.append(False)
+        except Exception as e:
+            log_test(f"{test_case['name']} - Exception", "FAIL", f"Error: {str(e)}")
+            results.append(False)
+    
+    return results
+
+def test_trending_videos_api():
+    """Test GET /api/youtube/trending endpoint"""
+    print(f"\n{Colors.BOLD}=== Testing Trending Videos API ==={Colors.ENDC}")
+    
+    test_cases = [
+        {
+            "name": "Default Trending Videos",
+            "params": {}
+        },
+        {
+            "name": "Limited Results",
+            "params": {"max_results": 10}
+        }
+    ]
+    
+    results = []
+    
+    for test_case in test_cases:
+        try:
+            print(f"\n{Colors.BLUE}Testing: {test_case['name']}{Colors.ENDC}")
+            
+            response = requests.get(
+                f"{BACKEND_URL}/youtube/trending",
+                params=test_case['params'],
+                timeout=45
+            )
+            
+            if response.status_code == 200:
+                videos = response.json()
+                
+                if isinstance(videos, list) and len(videos) > 0:
+                    # Verify video structure
+                    sample_video = videos[0]
+                    required_fields = ['id', 'title', 'channel', 'views', 'viral_score', 'thumbnail']
+                    missing_fields = [field for field in required_fields if field not in sample_video]
+                    
+                    if not missing_fields:
+                        log_test(f"{test_case['name']} - Response Structure", "PASS", 
+                                f"Retrieved {len(videos)} trending videos")
+                        
+                        # Verify content quality
+                        sample_title = sample_video.get('title', '')
+                        sample_views = sample_video.get('views', 0)
+                        sample_viral_score = sample_video.get('viral_score', 0)
+                        
+                        log_test(f"{test_case['name']} - Content Quality", "PASS", 
+                                f"Sample: '{sample_title[:50]}...' ({sample_views:,} views, Viral: {sample_viral_score}%)")
+                        results.append(True)
+                    else:
+                        log_test(f"{test_case['name']} - Response Structure", "FAIL", 
+                                f"Missing fields: {missing_fields}")
+                        results.append(False)
+                else:
+                    log_test(f"{test_case['name']} - Response Content", "FAIL", 
+                            f"Expected list with videos, got: {type(videos)}")
+                    results.append(False)
+            else:
+                log_test(f"{test_case['name']} - HTTP Status", "FAIL", 
+                        f"Status: {response.status_code}, Response: {response.text[:200]}")
+                results.append(False)
+                
+        except requests.exceptions.Timeout:
+            log_test(f"{test_case['name']} - Timeout", "FAIL", "Request timed out after 45 seconds")
+            results.append(False)
+        except Exception as e:
+            log_test(f"{test_case['name']} - Exception", "FAIL", f"Error: {str(e)}")
+            results.append(False)
+    
+    return results
+
+def test_competitor_analysis_apis():
+    """Test Competitor Analysis APIs (Channel Statistics)"""
+    print(f"\n{Colors.BOLD}=== Testing Competitor Analysis APIs ==={Colors.ENDC}")
+    
+    # Test channels for competitor analysis
+    test_channels = [
+        {
+            "name": "Marques Brownlee (MKBHD)",
+            "channel_id": "UCBJycsmduvYEL83R_U4JriQ"
+        },
+        {
+            "name": "MrBeast",
+            "channel_id": "UCX6OQ3DkcsbYNE6H8uQQuVA"
+        }
+    ]
+    
+    results = []
+    
+    for test_channel in test_channels:
+        try:
+            print(f"\n{Colors.BLUE}Testing Channel Stats: {test_channel['name']}{Colors.ENDC}")
+            
+            response = requests.get(
+                f"{BACKEND_URL}/youtube/channel/{test_channel['channel_id']}",
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                channel_stats = response.json()
+                
+                # Verify response structure
+                required_fields = ['channel_id', 'name', 'subscriber_count', 'view_count', 'video_count']
+                missing_fields = [field for field in required_fields if field not in channel_stats]
+                
+                if not missing_fields:
+                    log_test(f"Channel Stats - {test_channel['name']}", "PASS", 
+                            f"Name: {channel_stats.get('name')}, "
+                            f"Subscribers: {channel_stats.get('subscriber_count', 0):,}, "
+                            f"Views: {channel_stats.get('view_count', 0):,}, "
+                            f"Videos: {channel_stats.get('video_count', 0):,}")
+                    results.append(True)
+                else:
+                    log_test(f"Channel Stats - {test_channel['name']}", "FAIL", 
+                            f"Missing fields: {missing_fields}")
+                    results.append(False)
+            elif response.status_code == 404:
+                log_test(f"Channel Stats - {test_channel['name']}", "FAIL", "Channel not found")
+                results.append(False)
+            else:
+                log_test(f"Channel Stats - {test_channel['name']}", "FAIL", 
+                        f"Status: {response.status_code}, Response: {response.text[:200]}")
+                results.append(False)
+                
+        except requests.exceptions.Timeout:
+            log_test(f"Channel Stats - {test_channel['name']} - Timeout", "FAIL", 
+                    "Request timed out after 30 seconds")
+            results.append(False)
+        except Exception as e:
+            log_test(f"Channel Stats - {test_channel['name']} - Exception", "FAIL", f"Error: {str(e)}")
+            results.append(False)
+    
+    return results
+
 def test_trending_topics_api():
     """Test GET /api/trending-topics endpoint"""
     print(f"\n{Colors.BOLD}=== Testing Trending Topics API ==={Colors.ENDC}")
@@ -75,390 +464,37 @@ def test_trending_topics_api():
         log_test("GET /api/trending-topics - Exception", "FAIL", f"Error: {str(e)}")
         return False, None
 
-def test_script_generation_api():
-    """Test POST /api/generate-script endpoint with various configurations"""
-    print(f"\n{Colors.BOLD}=== Testing Script Generation API ==={Colors.ENDC}")
-    
-    test_cases = [
-        {
-            "name": "Basic Educational Script",
-            "payload": {
-                "topic": "How to Start a YouTube Channel",
-                "duration": "10min",
-                "tone": "educational",
-                "style": "faceless-documentary",
-                "language": "english"
-            }
-        },
-        {
-            "name": "Short Form Content",
-            "payload": {
-                "topic": "Quick Productivity Tips",
-                "duration": "shorts",
-                "tone": "funny",
-                "style": "shorts-punchline",
-                "language": "english"
-            }
-        },
-        {
-            "name": "Long Form Content",
-            "payload": {
-                "topic": "Complete Guide to Digital Marketing",
-                "duration": "20min",
-                "tone": "dramatic",
-                "style": "podcast-style",
-                "language": "english"
-            }
-        },
-        {
-            "name": "Spanish Language Content",
-            "payload": {
-                "topic": "Cómo hacer dinero en línea",
-                "duration": "5min",
-                "tone": "storytelling",
-                "style": "faceless-documentary",
-                "language": "spanish"
-            }
-        },
-        {
-            "name": "Hindi Language Content",
-            "payload": {
-                "topic": "भारत में बिजनेस शुरू करना",
-                "duration": "10min",
-                "tone": "educational",
-                "style": "educational-breakdown",
-                "language": "hindi"
-            }
-        }
-    ]
-    
-    results = []
-    
-    for test_case in test_cases:
-        try:
-            print(f"\n{Colors.BLUE}Testing: {test_case['name']}{Colors.ENDC}")
-            
-            response = requests.post(
-                f"{BACKEND_URL}/generate-script",
-                json=test_case['payload'],
-                timeout=60,
-                headers={'Content-Type': 'application/json'}
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # Verify required fields
-                required_fields = ['script', 'title', 'hook', 'metadata']
-                missing_fields = [field for field in required_fields if field not in data]
-                
-                if not missing_fields:
-                    # Verify content quality
-                    script_length = len(data['script'])
-                    title_length = len(data['title'])
-                    hook_length = len(data['hook'])
-                    
-                    log_test(f"{test_case['name']} - Response Structure", "PASS",
-                            f"All required fields present")
-                    
-                    log_test(f"{test_case['name']} - Content Quality", "PASS",
-                            f"Script: {script_length} chars, Title: {title_length} chars, Hook: {hook_length} chars")
-                    
-                    # Verify metadata
-                    metadata = data['metadata']
-                    expected_metadata = ['wordCount', 'estimatedDuration', 'style', 'tone', 'language']
-                    metadata_check = all(field in metadata for field in expected_metadata)
-                    
-                    if metadata_check:
-                        log_test(f"{test_case['name']} - Metadata", "PASS",
-                                f"Duration: {metadata['estimatedDuration']}, Style: {metadata['style']}")
-                        results.append(True)
-                    else:
-                        log_test(f"{test_case['name']} - Metadata", "FAIL",
-                                f"Missing metadata fields")
-                        results.append(False)
-                else:
-                    log_test(f"{test_case['name']} - Response Structure", "FAIL",
-                            f"Missing fields: {missing_fields}")
-                    results.append(False)
-            else:
-                log_test(f"{test_case['name']} - HTTP Status", "FAIL",
-                        f"Status: {response.status_code}, Response: {response.text[:200]}")
-                results.append(False)
-                
-        except requests.exceptions.Timeout:
-            log_test(f"{test_case['name']} - Timeout", "FAIL", "Request timed out after 60 seconds")
-            results.append(False)
-        except Exception as e:
-            log_test(f"{test_case['name']} - Exception", "FAIL", f"Error: {str(e)}")
-            results.append(False)
-    
-    return results
-
-def test_auto_research_api():
-    """Test POST /api/auto-research endpoint"""
-    print(f"\n{Colors.BOLD}=== Testing Auto-Research API ==={Colors.ENDC}")
-    
-    test_cases = [
-        {
-            "name": "Tech Topic Research",
-            "payload": {
-                "topic": "Artificial Intelligence in 2025",
-                "language": "english"
-            }
-        },
-        {
-            "name": "Business Topic Research", 
-            "payload": {
-                "topic": "Starting an Online Business",
-                "language": "english"
-            }
-        },
-        {
-            "name": "Health Topic Research",
-            "payload": {
-                "topic": "Mental Health and Wellness",
-                "language": "english"
-            }
-        }
-    ]
-    
-    results = []
-    
-    for test_case in test_cases:
-        try:
-            print(f"\n{Colors.BLUE}Testing: {test_case['name']}{Colors.ENDC}")
-            
-            response = requests.post(
-                f"{BACKEND_URL}/auto-research",
-                json=test_case['payload'],
-                timeout=45,
-                headers={'Content-Type': 'application/json'}
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # Verify required fields
-                required_fields = ['keywords', 'competitorCount', 'optimalLength', 'trendsAnalysis']
-                missing_fields = [field for field in required_fields if field not in data]
-                
-                if not missing_fields:
-                    log_test(f"{test_case['name']} - Response Structure", "PASS",
-                            "All required fields present")
-                    
-                    # Verify data quality
-                    keywords = data['keywords']
-                    competitor_count = data['competitorCount']
-                    optimal_length = data['optimalLength']
-                    trends_analysis = data['trendsAnalysis']
-                    
-                    if isinstance(keywords, list) and len(keywords) > 0:
-                        log_test(f"{test_case['name']} - Keywords", "PASS",
-                                f"Found {len(keywords)} keywords: {', '.join(keywords[:3])}")
-                    else:
-                        log_test(f"{test_case['name']} - Keywords", "FAIL",
-                                "No keywords or invalid format")
-                        results.append(False)
-                        continue
-                    
-                    if isinstance(competitor_count, int) and competitor_count > 0:
-                        log_test(f"{test_case['name']} - Competitor Analysis", "PASS",
-                                f"Found {competitor_count} competitors")
-                    else:
-                        log_test(f"{test_case['name']} - Competitor Analysis", "FAIL",
-                                f"Invalid competitor count: {competitor_count}")
-                        results.append(False)
-                        continue
-                    
-                    if optimal_length and len(optimal_length) > 0:
-                        log_test(f"{test_case['name']} - Optimal Length", "PASS",
-                                f"Recommended: {optimal_length}")
-                    else:
-                        log_test(f"{test_case['name']} - Optimal Length", "FAIL",
-                                "No optimal length provided")
-                        results.append(False)
-                        continue
-                    
-                    if trends_analysis and len(trends_analysis) > 10:
-                        log_test(f"{test_case['name']} - Trends Analysis", "PASS",
-                                f"Analysis: {trends_analysis[:100]}...")
-                        results.append(True)
-                    else:
-                        log_test(f"{test_case['name']} - Trends Analysis", "FAIL",
-                                "Insufficient trends analysis")
-                        results.append(False)
-                else:
-                    log_test(f"{test_case['name']} - Response Structure", "FAIL",
-                            f"Missing fields: {missing_fields}")
-                    results.append(False)
-            else:
-                log_test(f"{test_case['name']} - HTTP Status", "FAIL",
-                        f"Status: {response.status_code}, Response: {response.text[:200]}")
-                results.append(False)
-                
-        except requests.exceptions.Timeout:
-            log_test(f"{test_case['name']} - Timeout", "FAIL", "Request timed out after 45 seconds")
-            results.append(False)
-        except Exception as e:
-            log_test(f"{test_case['name']} - Exception", "FAIL", f"Error: {str(e)}")
-            results.append(False)
-    
-    return results
-
-def test_error_handling():
-    """Test error handling for invalid requests"""
-    print(f"\n{Colors.BOLD}=== Testing Error Handling ==={Colors.ENDC}")
-    
-    error_tests = [
-        {
-            "name": "Script Generation - Missing Topic",
-            "endpoint": "/generate-script",
-            "payload": {
-                "duration": "10min",
-                "tone": "educational"
-                # Missing required 'topic' field
-            },
-            "expected_status": [400, 422]
-        },
-        {
-            "name": "Script Generation - Invalid Duration",
-            "endpoint": "/generate-script", 
-            "payload": {
-                "topic": "Test Topic",
-                "duration": "invalid_duration",
-                "tone": "educational"
-            },
-            "expected_status": [200, 400, 422]  # May still work with fallback
-        },
-        {
-            "name": "Auto Research - Missing Topic",
-            "endpoint": "/auto-research",
-            "payload": {
-                "language": "english"
-                # Missing required 'topic' field
-            },
-            "expected_status": [400, 422]
-        },
-        {
-            "name": "Auto Research - Empty Topic",
-            "endpoint": "/auto-research",
-            "payload": {
-                "topic": "",
-                "language": "english"
-            },
-            "expected_status": [400, 422]
-        }
-    ]
-    
-    results = []
-    
-    for test in error_tests:
-        try:
-            print(f"\n{Colors.BLUE}Testing: {test['name']}{Colors.ENDC}")
-            
-            response = requests.post(
-                f"{BACKEND_URL}{test['endpoint']}",
-                json=test['payload'],
-                timeout=30,
-                headers={'Content-Type': 'application/json'}
-            )
-            
-            if response.status_code in test['expected_status']:
-                log_test(f"{test['name']}", "PASS",
-                        f"Returned expected status: {response.status_code}")
-                results.append(True)
-            else:
-                log_test(f"{test['name']}", "FAIL",
-                        f"Expected status {test['expected_status']}, got {response.status_code}")
-                results.append(False)
-                
-        except Exception as e:
-            log_test(f"{test['name']} - Exception", "FAIL", f"Error: {str(e)}")
-            results.append(False)
-    
-    return results
-
-def test_response_times():
-    """Test API response times"""
-    print(f"\n{Colors.BOLD}=== Testing Response Times ==={Colors.ENDC}")
-    
-    # Test trending topics response time
-    try:
-        start_time = time.time()
-        response = requests.get(f"{BACKEND_URL}/trending-topics", timeout=30)
-        end_time = time.time()
-        
-        response_time = end_time - start_time
-        
-        if response.status_code == 200 and response_time < 15:
-            log_test("Trending Topics Response Time", "PASS",
-                    f"Responded in {response_time:.2f} seconds")
-        elif response.status_code == 200:
-            log_test("Trending Topics Response Time", "WARN",
-                    f"Slow response: {response_time:.2f} seconds")
-        else:
-            log_test("Trending Topics Response Time", "FAIL",
-                    f"Failed with status {response.status_code}")
-    except Exception as e:
-        log_test("Trending Topics Response Time", "FAIL", f"Error: {str(e)}")
-    
-    # Test script generation response time
-    try:
-        start_time = time.time()
-        response = requests.post(
-            f"{BACKEND_URL}/generate-script",
-            json={
-                "topic": "Quick Test Topic",
-                "duration": "5min",
-                "tone": "educational",
-                "style": "faceless-documentary",
-                "language": "english"
-            },
-            timeout=60
-        )
-        end_time = time.time()
-        
-        response_time = end_time - start_time
-        
-        if response.status_code == 200 and response_time < 30:
-            log_test("Script Generation Response Time", "PASS",
-                    f"Responded in {response_time:.2f} seconds")
-        elif response.status_code == 200:
-            log_test("Script Generation Response Time", "WARN",
-                    f"Slow response: {response_time:.2f} seconds")
-        else:
-            log_test("Script Generation Response Time", "FAIL",
-                    f"Failed with status {response.status_code}")
-    except Exception as e:
-        log_test("Script Generation Response Time", "FAIL", f"Error: {str(e)}")
-
 def main():
     """Run all tests"""
-    print(f"{Colors.BOLD}🚀 AI Script Generator Backend API Testing{Colors.ENDC}")
+    print(f"{Colors.BOLD}🚀 YouTube Automation Tool Backend API Testing{Colors.ENDC}")
     print(f"Backend URL: {BACKEND_URL}")
     print(f"Test Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     all_results = []
     
-    # Test 1: Trending Topics API
-    trending_success, trending_data = test_trending_topics_api()
-    all_results.append(trending_success)
+    # Test 1: Dashboard Analytics API
+    dashboard_success, dashboard_data = test_dashboard_analytics_api()
+    all_results.append(dashboard_success)
     
-    # Test 2: Script Generation API
-    script_results = test_script_generation_api()
-    all_results.extend(script_results)
+    # Test 2: Channel Management APIs
+    channel_results = test_channel_management_apis()
+    all_results.extend(channel_results)
     
-    # Test 3: Auto-Research API
-    research_results = test_auto_research_api()
-    all_results.extend(research_results)
+    # Test 3: Content Ideas API
+    content_results = test_content_ideas_api()
+    all_results.extend(content_results)
     
-    # Test 4: Error Handling
-    error_results = test_error_handling()
-    all_results.extend(error_results)
+    # Test 4: Trending Videos API
+    trending_results = test_trending_videos_api()
+    all_results.extend(trending_results)
     
-    # Test 5: Response Times
-    test_response_times()
+    # Test 5: Competitor Analysis APIs
+    competitor_results = test_competitor_analysis_apis()
+    all_results.extend(competitor_results)
+    
+    # Test 6: Trending Topics API
+    trending_topics_success, trending_topics_data = test_trending_topics_api()
+    all_results.append(trending_topics_success)
     
     # Summary
     print(f"\n{Colors.BOLD}=== TEST SUMMARY ==={Colors.ENDC}")
@@ -473,10 +509,10 @@ def main():
     print(f"Success Rate: {success_rate:.1f}%")
     
     if success_rate >= 80:
-        print(f"\n{Colors.GREEN}✅ AI Script Generator APIs are working correctly!{Colors.ENDC}")
+        print(f"\n{Colors.GREEN}✅ YouTube Automation Tool Backend APIs are working correctly!{Colors.ENDC}")
         return True
     else:
-        print(f"\n{Colors.RED}❌ Some critical issues found in AI Script Generator APIs{Colors.ENDC}")
+        print(f"\n{Colors.RED}❌ Some critical issues found in Backend APIs{Colors.ENDC}")
         return False
 
 if __name__ == "__main__":
