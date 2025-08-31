@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Implement Growing Channel Analyzer + Copycat Engine feature with 3 modules: 1) Channel Growth Analysis - Track newly growing channels, 2) Content Pattern Extraction - Extract winning content formulas, 3) Copy & Improve Engine - Generate improved copycat versions."
+user_problem_statement: "Add Learning Hub – faceless YouTube course, automation workflows and Community Hub – creators ke liye forum/Discord integration features to the existing YouTube CreatorHub application."
 
 backend:
   - task: "YouTube Data API Integration - Trending Videos"
