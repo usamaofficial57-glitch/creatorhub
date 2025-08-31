@@ -5,6 +5,7 @@ import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
 import AIScriptGenerator from "./components/AIScriptGenerator";
 import ContentIdeas from "./components/ContentIdeas";
+import GrowingChannelAnalyzer from "./components/GrowingChannelAnalyzer";
 import CompetitorAnalysis from "./components/CompetitorAnalysis";
 import TrendingVideos from "./components/TrendingVideos";
 import ContentCalendar from "./components/ContentCalendar";
