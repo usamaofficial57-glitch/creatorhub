@@ -222,33 +222,37 @@ const ContentIdeas = () => {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-8 space-y-8" style={{backgroundColor: '#F3F4F6', minHeight: '100vh'}}>
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Content Ideas</h1>
-            <p className="text-gray-600 mt-1">Loading AI-powered content suggestions...</p>
+            <h1 className="text-4xl font-bold" style={{color: '#111827'}}>Content Ideas</h1>
+            <p className="text-lg mt-2" style={{color: '#6B7280'}}>Loading AI-powered content suggestions...</p>
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="w-12 h-12 animate-spin" style={{color: '#4F46E5'}} />
+            <p className="text-sm" style={{color: '#6B7280'}}>Generating creative ideas...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-8" style={{backgroundColor: '#F3F4F6', minHeight: '100vh'}}>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center fade-in-up">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Content Ideas</h1>
-          <p className="text-gray-600 mt-1">AI-powered content suggestions based on trending topics</p>
+          <h1 className="text-4xl font-bold" style={{color: '#111827'}}>Content Ideas</h1>
+          <p className="text-lg mt-2" style={{color: '#6B7280'}}>AI-powered content suggestions based on trending topics</p>
         </div>
         <div className="flex space-x-3">
           <Button 
             variant="outline" 
             onClick={generateTrendingIdeas}
             disabled={generating}
+            className="btn-animate rounded-xl shadow-md"
           >
             {generating ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -258,9 +262,13 @@ const ContentIdeas = () => {
             Trending Ideas
           </Button>
           <Button 
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             onClick={generateNewIdeas}
             disabled={generating || !topic.trim()}
+            className="btn-animate rounded-xl shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, #4F46E5, #10B981)',
+              borderColor: 'transparent'
+            }}
           >
             {generating ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -273,40 +281,54 @@ const ContentIdeas = () => {
       </div>
 
       {/* AI Content Generator */}
-      <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="flex items-center space-x-2">
-            <Brain className="w-6 h-6 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">AI Content Generator</h3>
+      <Card className="p-8 card-hover bg-white shadow-xl border-0 rounded-3xl" style={{
+        background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.03), rgba(16, 185, 129, 0.03))'
+      }}>
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="flex items-center space-x-3">
+            <div 
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg"
+              style={{
+                background: 'linear-gradient(135deg, #4F46E5, #10B981)'
+              }}
+            >
+              <Brain className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold" style={{color: '#111827'}}>AI Content Generator</h3>
           </div>
-          <Badge className="bg-blue-100 text-blue-800">
+          <Badge className="px-3 py-1 rounded-full font-bold text-xs" style={{
+            backgroundColor: '#4F46E520',
+            color: '#4F46E5',
+            border: 'none'
+          }}>
             <Zap className="w-3 h-3 mr-1" />
             Powered by AI
           </Badge>
         </div>
         
-        <div className="flex flex-wrap items-end gap-4">
+        <div className="flex flex-wrap items-end gap-6">
           <div className="flex-1 min-w-64">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold mb-3" style={{color: '#111827'}}>
               Topic or Keyword
             </label>
             <Input
               placeholder="e.g., 'productivity tips', 'gaming tutorials', 'cooking hacks'"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              className="w-full"
+              className="w-full p-4 rounded-2xl border-2 focus:border-[#4F46E5] transition-colors"
+              style={{backgroundColor: '#F9FAFB', borderColor: '#E5E7EB'}}
             />
           </div>
           
           <div className="w-48">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold mb-3" style={{color: '#111827'}}>
               Category
             </label>
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
+              <SelectTrigger className="rounded-2xl border-2 p-4" style={{backgroundColor: '#F9FAFB', borderColor: '#E5E7EB'}}>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-2xl">
                 <SelectItem value="general">General</SelectItem>
                 <SelectItem value="technology">Technology</SelectItem>
                 <SelectItem value="lifestyle">Lifestyle</SelectItem>
@@ -322,7 +344,11 @@ const ContentIdeas = () => {
           <Button 
             onClick={generateNewIdeas}
             disabled={generating || !topic.trim()}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            className="px-8 py-4 rounded-2xl font-bold btn-animate shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, #4F46E5, #10B981)',
+              borderColor: 'transparent'
+            }}
           >
             {generating ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -335,47 +361,53 @@ const ContentIdeas = () => {
       </Card>
 
       {/* Stats */}
-      <Card className="p-4">
+      <Card className="p-8 bg-white shadow-xl border-0 rounded-3xl card-hover">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-12">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{ideas.length}</div>
-              <div className="text-sm text-gray-600">Total Ideas</div>
+              <div className="text-4xl font-bold mb-2" style={{color: '#4F46E5'}}>{ideas.length}</div>
+              <div className="text-sm font-medium" style={{color: '#6B7280'}}>Total Ideas</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-4xl font-bold mb-2" style={{color: '#10B981'}}>
                 {ideas.filter(i => i.ai_generated).length}
               </div>
-              <div className="text-sm text-gray-600">AI Generated</div>
+              <div className="text-sm font-medium" style={{color: '#6B7280'}}>AI Generated</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-4xl font-bold mb-2" style={{color: '#F59E0B'}}>
                 {Math.round(ideas.reduce((sum, i) => sum + (i.viral_potential || 0), 0) / ideas.length) || 0}%
               </div>
-              <div className="text-sm text-gray-600">Avg Viral Potential</div>
+              <div className="text-sm font-medium" style={{color: '#6B7280'}}>Avg Viral Potential</div>
             </div>
           </div>
         </div>
       </Card>
 
       {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center space-x-2">
-            <Search className="w-4 h-4 text-gray-400" />
+      <Card className="p-6 bg-white shadow-xl border-0 rounded-3xl card-hover">
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center space-x-3">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{backgroundColor: '#6B728020'}}
+            >
+              <Search className="w-5 h-5" style={{color: '#6B7280'}} />
+            </div>
             <Input
               placeholder="Search content ideas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64"
+              className="w-64 rounded-2xl border-2 focus:border-[#4F46E5] transition-colors"
+              style={{backgroundColor: '#F9FAFB', borderColor: '#E5E7EB'}}
             />
           </div>
           
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-40 rounded-2xl border-2" style={{backgroundColor: '#F9FAFB', borderColor: '#E5E7EB'}}>
               <SelectValue placeholder="Category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-2xl">
               <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="Technology">Technology</SelectItem>
               <SelectItem value="Lifestyle">Lifestyle</SelectItem>
@@ -387,10 +419,10 @@ const ContentIdeas = () => {
           </Select>
           
           <Select value={trendStatus} onValueChange={setTrendStatus}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-32 rounded-2xl border-2" style={{backgroundColor: '#F9FAFB', borderColor: '#E5E7EB'}}>
               <SelectValue placeholder="Trend Status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-2xl">
               <SelectItem value="all">All Trends</SelectItem>
               <SelectItem value="Rising">Rising</SelectItem>
               <SelectItem value="Trending">Trending</SelectItem>
@@ -399,13 +431,17 @@ const ContentIdeas = () => {
             </SelectContent>
           </Select>
           
-          <Button variant="outline">
+          <Button variant="outline" className="rounded-2xl border-2" style={{borderColor: '#E5E7EB'}}>
             <Filter className="w-4 h-4 mr-2" />
             Advanced Filters
           </Button>
 
           <div className="ml-auto">
-            <Badge variant="outline">
+            <Badge className="px-4 py-2 rounded-full font-bold text-sm" style={{
+              backgroundColor: '#4F46E520',
+              color: '#4F46E5',
+              border: 'none'
+            }}>
               {filteredIdeas.length} ideas found
             </Badge>
           </div>
