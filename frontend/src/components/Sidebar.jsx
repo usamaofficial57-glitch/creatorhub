@@ -26,6 +26,8 @@ const Sidebar = () => {
     { icon: PenTool, label: 'AI Script Generator', path: '/script-generator', category: 'create' },
     { icon: Lightbulb, label: 'Content Ideas', path: '/content-ideas', category: 'create' },
     { icon: Zap, label: 'Growing Channel Analyzer', path: '/growing-analyzer', category: 'analyze' },
+    { icon: BookOpen, label: 'Learning Hub', path: '/learning-hub', category: 'learn' },
+    { icon: MessageSquare, label: 'Community Hub', path: '/community-hub', category: 'community' },
     { icon: Users, label: 'Competitor Analysis', path: '/competitors', category: 'analyze' },
     { icon: TrendingUp, label: 'Trending Videos', path: '/trending', category: 'analyze' },
     { icon: Calendar, label: 'Content Calendar', path: '/calendar', category: 'manage' },
