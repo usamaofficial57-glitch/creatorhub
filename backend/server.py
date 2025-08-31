@@ -861,6 +861,284 @@ Make sure the titles are attention-grabbing and follow successful YouTube patter
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to generate content ideas: {str(e)}")
 
+# Pydantic models for script generation
+class ScriptGenerationRequest(BaseModel):
+    topic: str
+    duration: str = "10min"
+    tone: str = "educational"
+    style: str = "faceless-documentary"
+    language: str = "english"
+    autoResearch: bool = False
+    targetAudience: str = "general"
+    includeHook: bool = True
+    includeCTA: bool = True
+    includeTimestamps: bool = True
+    researchData: Optional[dict] = None
+
+class GeneratedScript(BaseModel):
+    script: str
+    title: str
+    hook: str
+    metadata: dict
+
+class TrendingTopicsResponse(BaseModel):
+    topics: List[str]
+
+class AutoResearchResponse(BaseModel):
+    keywords: List[str]
+    competitorCount: int
+    optimalLength: str
+    trendsAnalysis: str
+
+# AI Script Generator endpoints
+@api_router.post("/generate-script", response_model=GeneratedScript)
+async def generate_script(request: ScriptGenerationRequest):
+    """Generate AI-powered YouTube script based on user requirements"""
+    try:
+        # Initialize AI chat with specialized system message for script generation
+        system_message = f"""You are an expert YouTube script writer specializing in {request.style} content. 
+        Generate a complete, engaging YouTube script in {request.language} with a {request.tone} tone.
+        
+        Key requirements:
+        - Duration: {request.duration}
+        - Style: {request.style}
+        - Target audience: {request.targetAudience}
+        - Language: {request.language}
+        - Include hook: {request.includeHook}
+        - Include CTA: {request.includeCTA}
+        - Include timestamps: {request.includeTimestamps}
+        
+        Script styles guide:
+        - faceless-documentary: Professional narration with facts and insights
+        - faceless-listicle: Numbered list format with countdown style
+        - podcast-style: Conversational tone with natural flow
+        - shorts-punchline: Quick hook, main point, strong ending (max 60 seconds)
+        - educational-breakdown: Step-by-step tutorial format
+        - story-driven: Narrative structure with beginning, middle, end
+        
+        Duration guidelines:
+        - shorts: 60 seconds maximum, very punchy
+        - 5min: Concise, focused content
+        - 10min: Standard YouTube video length
+        - 15min+: Comprehensive coverage with multiple sections
+        - podcast: Long-form conversational content
+        
+        Always provide:
+        1. A compelling hook (first 15 seconds)
+        2. Clear structure with smooth transitions
+        3. Engaging content throughout
+        4. Strong call-to-action
+        5. Proper pacing for the duration
+        """
+        
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"script_gen_{uuid.uuid4()}",
+            system_message=system_message
+        ).with_model("openai", "gpt-4o-mini")
+        
+        # Build the generation prompt
+        prompt = f"""Generate a {request.duration} YouTube script about: {request.topic}
+
+Style: {request.style}
+Tone: {request.tone}
+Language: {request.language}
+Target Audience: {request.targetAudience}
+
+"""
+        
+        # Add research data if available
+        if request.researchData:
+            prompt += f"Research insights to incorporate:\n"
+            if 'keywords' in request.researchData:
+                prompt += f"- Trending keywords: {', '.join(request.researchData['keywords'])}\n"
+            if 'competitorCount' in request.researchData:
+                prompt += f"- {request.researchData['competitorCount']} similar videos found in competitor analysis\n"
+            if 'optimalLength' in request.researchData:
+                prompt += f"- Optimal length based on research: {request.researchData['optimalLength']}\n"
+            prompt += "\n"
+        
+        prompt += """Please provide the script in this exact format:
+
+TITLE: [Compelling video title]
+
+HOOK: [First 15 seconds - grab attention immediately]
+
+SCRIPT:
+[Full script with clear sections]"""
+        
+        if request.includeTimestamps:
+            prompt += "\n[Include timestamps like [0:00], [1:30], etc.]"
+        
+        if request.includeCTA:
+            prompt += "\n[Include natural call-to-actions throughout]"
+        
+        # Generate the script
+        response = await chat.send_message_async(UserMessage(prompt))
+        script_content = response.message.content
+        
+        # Parse the response to extract title, hook, and script
+        lines = script_content.split('\n')
+        title = "Generated Script"
+        hook = ""
+        script = script_content
+        
+        for i, line in enumerate(lines):
+            if line.startswith('TITLE:'):
+                title = line.replace('TITLE:', '').strip()
+            elif line.startswith('HOOK:'):
+                hook = line.replace('HOOK:', '').strip()
+            elif line.startswith('SCRIPT:'):
+                script = '\n'.join(lines[i+1:]).strip()
+                break
+        
+        # Create metadata
+        metadata = {
+            "wordCount": len(script.split()),
+            "estimatedDuration": request.duration,
+            "style": request.style,
+            "tone": request.tone,
+            "language": request.language,
+            "generatedAt": datetime.utcnow().isoformat(),
+            "targetAudience": request.targetAudience
+        }
+        
+        # Store the generated script in the database
+        script_doc = {
+            "script_id": str(uuid.uuid4()),
+            "title": title,
+            "hook": hook,
+            "script": script,
+            "topic": request.topic,
+            "metadata": metadata,
+            "generated_at": datetime.utcnow(),
+            "user_id": "default_user"  # In a real app, this would come from authentication
+        }
+        
+        await db.generated_scripts.insert_one(script_doc)
+        
+        return GeneratedScript(
+            script=script,
+            title=title,
+            hook=hook,
+            metadata=metadata
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generating script: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to generate script: {str(e)}")
+
+@api_router.get("/trending-topics", response_model=TrendingTopicsResponse)
+async def get_trending_topics():
+    """Get current trending topics for script inspiration"""
+    try:
+        # Initialize AI for trend analysis
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"trends_{uuid.uuid4()}",
+            system_message="You are a YouTube trends analyst. Provide current trending topics that are perfect for YouTube content creation."
+        ).with_model("openai", "gpt-4o-mini")
+        
+        prompt = """List 12 current trending topics that would make great YouTube videos. 
+        Focus on topics that are:
+        1. Currently popular and trending
+        2. Have good search volume
+        3. Suitable for various content styles
+        4. Appeal to different demographics
+        
+        Provide just the topic names, one per line, without numbers or explanations."""
+        
+        response = await chat.send_message_async(UserMessage(prompt))
+        topics = [topic.strip() for topic in response.message.content.split('\n') if topic.strip()]
+        
+        return TrendingTopicsResponse(topics=topics[:12])  # Limit to 12 topics
+        
+    except Exception as e:
+        logger.error(f"Error fetching trending topics: {str(e)}")
+        # Return fallback topics if API fails
+        fallback_topics = [
+            "AI and Machine Learning Explained",
+            "Cryptocurrency Investment Tips",
+            "Climate Change Solutions",
+            "Space Exploration Updates",
+            "Health and Wellness Trends",
+            "Tech Product Reviews",
+            "Personal Finance Strategies",
+            "Productivity Life Hacks",
+            "Social Media Marketing",
+            "Remote Work Tips",
+            "Sustainable Living Guide",
+            "Mental Health Awareness"
+        ]
+        return TrendingTopicsResponse(topics=fallback_topics)
+
+@api_router.post("/auto-research", response_model=AutoResearchResponse)
+async def auto_research(request: dict):
+    """Perform automated research for the given topic"""
+    try:
+        topic = request.get('topic', '')
+        language = request.get('language', 'english')
+        
+        if not topic:
+            raise HTTPException(status_code=400, detail="Topic is required for auto-research")
+        
+        # Initialize AI for research analysis
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"research_{uuid.uuid4()}",
+            system_message=f"You are a YouTube research analyst. Analyze topics and provide insights for content creation in {language}."
+        ).with_model("openai", "gpt-4o-mini")
+        
+        prompt = f"""Analyze the topic "{topic}" for YouTube content creation and provide:
+        
+        1. 5-8 trending keywords related to this topic
+        2. Estimated number of similar videos/competition level
+        3. Optimal video length for this topic
+        4. Brief trends analysis
+        
+        Format your response exactly like this:
+
+        KEYWORDS: keyword1, keyword2, keyword3, keyword4, keyword5
+        COMPETITION: 1500
+        OPTIMAL_LENGTH: 10-12 minutes
+        TRENDS: Brief analysis of current trends for this topic"""
+        
+        response = await chat.send_message_async(UserMessage(prompt))
+        content = response.message.content
+        
+        # Parse the response
+        keywords = []
+        competitor_count = 0
+        optimal_length = "10-12 minutes"
+        trends_analysis = ""
+        
+        lines = content.split('\n')
+        for line in lines:
+            if line.startswith('KEYWORDS:'):
+                keywords = [k.strip() for k in line.replace('KEYWORDS:', '').split(',')]
+            elif line.startswith('COMPETITION:'):
+                try:
+                    competitor_count = int(line.replace('COMPETITION:', '').strip())
+                except:
+                    competitor_count = 1000
+            elif line.startswith('OPTIMAL_LENGTH:'):
+                optimal_length = line.replace('OPTIMAL_LENGTH:', '').strip()
+            elif line.startswith('TRENDS:'):
+                trends_analysis = line.replace('TRENDS:', '').strip()
+        
+        return AutoResearchResponse(
+            keywords=keywords,
+            competitorCount=competitor_count,
+            optimalLength=optimal_length,
+            trendsAnalysis=trends_analysis
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in auto-research: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to perform auto-research: {str(e)}")
+
 # Channel management endpoints
 @api_router.post("/channels/connect", response_model=ConnectedChannel)
 async def connect_channel(request: ChannelConnectionRequest):
