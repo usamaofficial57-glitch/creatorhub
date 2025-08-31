@@ -3,6 +3,7 @@ import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
+import AIScriptGenerator from "./components/AIScriptGenerator";
 import ContentIdeas from "./components/ContentIdeas";
 import CompetitorAnalysis from "./components/CompetitorAnalysis";
 import TrendingVideos from "./components/TrendingVideos";
