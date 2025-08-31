@@ -244,16 +244,20 @@ const CompetitorAnalysis = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-8" style={{backgroundColor: '#F3F4F6', minHeight: '100vh'}}>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center fade-in-up">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Competitor Analysis</h1>
-          <p className="text-gray-600 mt-1">Track and analyze your competitors with real YouTube data</p>
+          <h1 className="text-4xl font-bold" style={{color: '#111827'}}>Competitor Analysis</h1>
+          <p className="text-lg mt-2" style={{color: '#6B7280'}}>Track and analyze your competitors with real YouTube data</p>
         </div>
         <Button 
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           disabled={addingCompetitor}
+          className="btn-animate rounded-xl shadow-lg"
+          style={{
+            background: 'linear-gradient(135deg, #4F46E5, #10B981)',
+            borderColor: 'transparent'
+          }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Competitor
@@ -261,56 +265,77 @@ const CompetitorAnalysis = () => {
       </div>
 
       {/* Stats Overview */}
-      <Card className="p-4">
+      <Card className="p-8 bg-white shadow-xl border-0 rounded-3xl card-hover">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-12">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{competitors.length}</div>
-              <div className="text-sm text-gray-600">Tracked Channels</div>
+              <div className="text-4xl font-bold mb-2" style={{color: '#4F46E5'}}>{competitors.length}</div>
+              <div className="text-sm font-medium" style={{color: '#6B7280'}}>Tracked Channels</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-4xl font-bold mb-2" style={{color: '#10B981'}}>
                 {competitors.filter(c => c.notifications).length}
               </div>
-              <div className="text-sm text-gray-600">Active Alerts</div>
+              <div className="text-sm font-medium" style={{color: '#6B7280'}}>Active Alerts</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-4xl font-bold mb-2" style={{color: '#8B5CF6'}}>
                 {formatNumber(competitors.reduce((sum, c) => sum + (c.subscriberCount || 0), 0))}
               </div>
-              <div className="text-sm text-gray-600">Total Subscribers</div>
+              <div className="text-sm font-medium" style={{color: '#6B7280'}}>Total Subscribers</div>
             </div>
           </div>
-          <Badge className="bg-green-100 text-green-800">Live Data</Badge>
+          <Badge className="px-4 py-2 rounded-full font-bold text-sm" style={{
+            backgroundColor: '#10B98120',
+            color: '#10B981',
+            border: 'none'
+          }}>
+            <div className="status-dot status-connected mr-2"></div>
+            Live Data
+          </Badge>
         </div>
       </Card>
 
       {/* Add Competitor Form */}
-      <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="flex items-center space-x-2">
-            <Users className="w-6 h-6 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Add New Competitor</h3>
+      <Card className="p-8 card-hover bg-white shadow-xl border-0 rounded-3xl" style={{
+        background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.03), rgba(16, 185, 129, 0.03))'
+      }}>
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="flex items-center space-x-3">
+            <div 
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg"
+              style={{
+                background: 'linear-gradient(135deg, #4F46E5, #10B981)'
+              }}
+            >
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold" style={{color: '#111827'}}>Add New Competitor</h3>
           </div>
         </div>
         
-        <div className="flex items-end space-x-4">
+        <div className="flex items-end space-x-6">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold mb-3" style={{color: '#111827'}}>
               YouTube Channel URL or ID
             </label>
             <Input
               placeholder="e.g., https://youtube.com/@channelname or UCxxxxxxxxx"
               value={newCompetitorUrl}
               onChange={(e) => setNewCompetitorUrl(e.target.value)}
-              className="w-full"
+              className="w-full p-4 rounded-2xl border-2 focus:border-[#4F46E5] transition-colors"
+              style={{backgroundColor: '#F9FAFB', borderColor: '#E5E7EB'}}
             />
           </div>
           
           <Button 
             onClick={addCompetitor}
             disabled={addingCompetitor || !newCompetitorUrl.trim()}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            className="px-8 py-4 rounded-2xl font-bold btn-animate shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, #4F46E5, #10B981)',
+              borderColor: 'transparent'
+            }}
           >
             {addingCompetitor ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -323,18 +348,28 @@ const CompetitorAnalysis = () => {
       </Card>
 
       {/* Search Filter */}
-      <Card className="p-4">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 flex-1">
-            <Search className="w-4 h-4 text-gray-400" />
+      <Card className="p-6 bg-white shadow-xl border-0 rounded-3xl card-hover">
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-3 flex-1">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{backgroundColor: '#6B728020'}}
+            >
+              <Search className="w-5 h-5" style={{color: '#6B7280'}} />
+            </div>
             <Input
               placeholder="Search competitors..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
+              className="w-full rounded-2xl border-2 focus:border-[#4F46E5] transition-colors"
+              style={{backgroundColor: '#F9FAFB', borderColor: '#E5E7EB'}}
             />
           </div>
-          <Badge variant="outline">
+          <Badge className="px-4 py-2 rounded-full font-bold text-sm" style={{
+            backgroundColor: '#4F46E520',
+            color: '#4F46E5',
+            border: 'none'
+          }}>
             {filteredCompetitors.length} competitors
           </Badge>
         </div>
