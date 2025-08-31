@@ -1552,6 +1552,253 @@ async def get_dashboard_analytics():
             "monthlyGrowth": []
         }
 
+# Learning Hub API endpoints
+class Course(BaseModel):
+    id: str
+    title: str
+    description: str
+    instructor: str
+    duration: str
+    lessons: int
+    level: str
+    rating: float
+    students: int
+    thumbnail: str
+    modules: List[dict] = []
+
+class LessonProgress(BaseModel):
+    lesson_id: str
+    completed: bool = False
+    completed_at: Optional[str] = None
+
+class AutomationWorkflow(BaseModel):
+    id: str
+    name: str
+    description: str
+    steps: int
+    status: str
+    last_run: str
+    success_rate: int
+    config: dict = {}
+
+@api_router.get("/learning/courses")
+async def get_courses():
+    """Get available learning courses"""
+    try:
+        # For now, return mock data - in production this would come from database
+        courses = [
+            {
+                "id": "faceless-youtube-mastery",
+                "title": "Faceless YouTube Mastery",
+                "description": "Complete guide to building a successful faceless YouTube channel",
+                "instructor": "CreatorHub Team",
+                "duration": "6 hours",
+                "lessons": 24,
+                "level": "Beginner to Advanced",
+                "rating": 4.9,
+                "students": 15420,
+                "thumbnail": "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=300&fit=crop",
+                "progress": 0
+            },
+            {
+                "id": "automation-mastery",
+                "title": "YouTube Automation Mastery",
+                "description": "Advanced automation strategies for scaling your YouTube channel",
+                "instructor": "Automation Expert",
+                "duration": "4 hours",
+                "lessons": 18,
+                "level": "Intermediate",
+                "rating": 4.8,
+                "students": 8920,
+                "thumbnail": "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=400&h=300&fit=crop",
+                "progress": 0
+            }
+        ]
+        return {"courses": courses}
+    except Exception as e:
+        logger.error(f"Error fetching courses: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch courses")
+
+@api_router.get("/learning/workflows")
+async def get_automation_workflows():
+    """Get automation workflows"""
+    try:
+        workflows = [
+            {
+                "id": "content-pipeline",
+                "name": "Complete Content Pipeline",
+                "description": "Automated workflow from idea generation to published video",
+                "steps": 8,
+                "status": "active",
+                "last_run": "2 hours ago",
+                "success_rate": 94,
+                "icon": "Zap",
+                "color": "bg-blue-500"
+            },
+            {
+                "id": "analytics-report",
+                "name": "Weekly Analytics Report",
+                "description": "Automated weekly performance analysis and insights",
+                "steps": 4,
+                "status": "active",
+                "last_run": "1 day ago",
+                "success_rate": 98,
+                "icon": "BarChart3",
+                "color": "bg-green-500"
+            },
+            {
+                "id": "competitor-monitoring",
+                "name": "Competitor Content Monitoring",
+                "description": "Track competitor uploads and analyze trending content",
+                "steps": 6,
+                "status": "active",
+                "last_run": "4 hours ago",
+                "success_rate": 91,
+                "icon": "Target",
+                "color": "bg-purple-500"
+            }
+        ]
+        return {"workflows": workflows}
+    except Exception as e:
+        logger.error(f"Error fetching workflows: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch workflows")
+
+# Community Hub API endpoints
+class CommunityPost(BaseModel):
+    id: str
+    title: str
+    content: str
+    author: dict
+    category: str
+    replies: int
+    likes: int
+    views: int
+    timeAgo: str
+    tags: List[str] = []
+    pinned: bool = False
+
+class CommunityMember(BaseModel):
+    id: str
+    name: str
+    username: str
+    subscribers: str
+    niche: str
+    avatar: str
+    growth: str
+    isOnline: bool
+    level: str
+    posts: int
+    reputation: int
+
+@api_router.get("/community/discussions")
+async def get_community_discussions(category: str = "all", search: str = ""):
+    """Get community discussions"""
+    try:
+        # Mock community discussions data
+        discussions = [
+            {
+                "id": "1",
+                "title": "Just hit 100K subscribers with faceless content! AMA",
+                "content": "Started my channel 8 months ago following the faceless YouTube strategies. Here to answer any questions about what worked for me!",
+                "author": {
+                    "name": "TechGrowthHacker",
+                    "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face",
+                    "subscribers": "127K",
+                    "verified": True,
+                    "level": "Expert"
+                },
+                "category": "success-stories",
+                "replies": 47,
+                "likes": 234,
+                "views": 1205,
+                "timeAgo": "2 hours ago",
+                "tags": ["milestone", "faceless", "growth"],
+                "pinned": True
+            },
+            {
+                "id": "2",
+                "title": "Best automation tools for YouTube content creation?",
+                "content": "Looking for recommendations on tools that can help automate the content creation process. Currently spending 10+ hours per video.",
+                "author": {
+                    "name": "ContentCreator2024",
+                    "avatar": "https://images.unsplash.com/photo-1494790108755-2616b5185e29?w=40&h=40&fit=crop&crop=face",
+                    "subscribers": "12K",
+                    "verified": False,
+                    "level": "Growing"
+                },
+                "category": "automation",
+                "replies": 23,
+                "likes": 89,
+                "views": 456,
+                "timeAgo": "4 hours ago",
+                "tags": ["automation", "tools", "efficiency"]
+            }
+        ]
+        
+        # Filter by category and search
+        filtered = discussions
+        if category != "all":
+            filtered = [d for d in filtered if d["category"] == category]
+        if search:
+            filtered = [d for d in filtered if search.lower() in d["title"].lower() or search.lower() in d["content"].lower()]
+        
+        return {"discussions": filtered}
+    except Exception as e:
+        logger.error(f"Error fetching discussions: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch discussions")
+
+@api_router.get("/community/creators")
+async def get_featured_creators():
+    """Get featured community creators"""
+    try:
+        creators = [
+            {
+                "id": "1",
+                "name": "Alex Chen",
+                "username": "@alexcreates",
+                "subscribers": "567K",
+                "niche": "Tech Reviews",
+                "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop&crop=face",
+                "growth": "+15.2%",
+                "isOnline": True,
+                "level": "Expert",
+                "posts": 156,
+                "reputation": 2340
+            },
+            {
+                "id": "2",
+                "name": "Sarah Johnson",
+                "username": "@sarahgrows",
+                "subscribers": "234K",
+                "niche": "Business",
+                "avatar": "https://images.unsplash.com/photo-1494790108755-2616b5185e29?w=60&h=60&fit=crop&crop=face",
+                "growth": "+8.7%",
+                "isOnline": False,
+                "level": "Mentor",
+                "posts": 89,
+                "reputation": 1890
+            }
+        ]
+        return {"creators": creators}
+    except Exception as e:
+        logger.error(f"Error fetching creators: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch creators")
+
+@api_router.get("/community/stats")
+async def get_community_stats():
+    """Get community statistics"""
+    try:
+        stats = {
+            "activeMembers": 15420,
+            "discussions": 1247,
+            "successStories": 89,
+            "expertsOnline": 567
+        }
+        return stats
+    except Exception as e:
+        logger.error(f"Error fetching community stats: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch community stats")
+
 # Include the router in the main app
 app.include_router(api_router)
 
