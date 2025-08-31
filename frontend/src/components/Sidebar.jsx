@@ -13,7 +13,9 @@ import {
   Video,
   PenTool,
   Sparkles,
-  Zap
+  Zap,
+  BookOpen,
+  MessageSquare
 } from 'lucide-react';
 
 const Sidebar = () => {
