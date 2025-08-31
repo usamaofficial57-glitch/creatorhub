@@ -13,7 +13,7 @@ import time
 from datetime import datetime
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://code-cleaner-6.preview.emergentagent.com/api"
+BACKEND_URL = "https://tubeflow-design.preview.emergentagent.com/api"
 
 class Colors:
     GREEN = '\033[92m'
