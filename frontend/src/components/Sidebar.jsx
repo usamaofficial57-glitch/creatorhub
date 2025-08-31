@@ -44,8 +44,10 @@ const Sidebar = () => {
     main: '#4F46E5',
     create: '#10B981', 
     analyze: '#F59E0B',
-    manage: '#8B5CF6',
-    optimize: '#EF4444',
+    learn: '#8B5CF6',
+    community: '#EF4444',
+    manage: '#6366F1',
+    optimize: '#F97316',
     config: '#6B7280'
   };
   
