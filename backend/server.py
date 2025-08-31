@@ -1049,7 +1049,7 @@ async def get_trending_topics():
         
         Provide just the topic names, one per line, without numbers or explanations."""
         
-        response = await chat.send_message_async(UserMessage(prompt))
+        response = await chat.send_message(UserMessage(prompt))
         topics = [topic.strip() for topic in response.message.content.split('\n') if topic.strip()]
         
         return TrendingTopicsResponse(topics=topics[:12])  # Limit to 12 topics
