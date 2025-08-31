@@ -19,6 +19,7 @@ const Sidebar = () => {
   
   const menuItems = [
     { icon: BarChart3, label: 'Dashboard', path: '/' },
+    { icon: PenTool, label: 'AI Script Generator', path: '/script-generator' },
     { icon: Lightbulb, label: 'Content Ideas', path: '/content-ideas' },
     { icon: Users, label: 'Competitor Analysis', path: '/competitors' },
     { icon: TrendingUp, label: 'Trending Videos', path: '/trending' },
