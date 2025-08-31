@@ -16,7 +16,7 @@ import time
 from datetime import datetime
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://growth-extractor.preview.emergentagent.com/api"
+BACKEND_URL = "https://creator-forum.preview.emergentagent.com/api"
 
 class Colors:
     GREEN = '\033[92m'
