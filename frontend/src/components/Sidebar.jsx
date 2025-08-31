@@ -12,7 +12,8 @@ import {
   UserPlus,
   Video,
   PenTool,
-  Sparkles
+  Sparkles,
+  Zap
 } from 'lucide-react';
 
 const Sidebar = () => {
