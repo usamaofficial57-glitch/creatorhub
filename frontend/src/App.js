@@ -24,6 +24,7 @@ function App() {
           <main className="flex-1 ml-64">
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/script-generator" element={<AIScriptGenerator />} />
               <Route path="/content-ideas" element={<ContentIdeas />} />
               <Route path="/competitors" element={<CompetitorAnalysis />} />
               <Route path="/trending" element={<TrendingVideos />} />
