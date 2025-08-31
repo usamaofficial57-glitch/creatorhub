@@ -1104,7 +1104,7 @@ async def auto_research(request: dict):
         OPTIMAL_LENGTH: 10-12 minutes
         TRENDS: Brief analysis of current trends for this topic"""
         
-        response = await chat.send_message_async(UserMessage(prompt))
+        response = await chat.send_message(UserMessage(prompt))
         content = response.message.content
         
         # Parse the response
