@@ -975,7 +975,7 @@ SCRIPT:
         
         # Generate the script
         response = await chat.send_message(UserMessage(prompt))
-        script_content = response.message.content
+        script_content = str(response)
         
         # Parse the response to extract title, hook, and script
         lines = script_content.split('\n')
