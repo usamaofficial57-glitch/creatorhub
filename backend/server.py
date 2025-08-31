@@ -974,7 +974,7 @@ SCRIPT:
             prompt += "\n[Include natural call-to-actions throughout]"
         
         # Generate the script
-        response = await chat.send_message_async(UserMessage(prompt))
+        response = await chat.send_message(UserMessage(prompt))
         script_content = response.message.content
         
         # Parse the response to extract title, hook, and script
