@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Testing for AI Script Generator
-Testing the newly implemented endpoints:
-- GET /api/trending-topics
-- POST /api/generate-script  
-- POST /api/auto-research
+Comprehensive Backend API Testing for YouTube Automation Tool
+Testing all backend functionality after frontend redesign:
+- Dashboard Analytics API (GET /api/analytics/dashboard)
+- Channel Management APIs (GET /api/channels, POST /api/channels/connect, DELETE /api/channels/{id})
+- Content Ideas API (POST /api/content/generate-ideas)
+- Trending Videos API (GET /api/youtube/trending)
+- Competitor Analysis APIs (GET /api/youtube/channel/{id})
+- AI Script Generator APIs (GET /api/trending-topics, POST /api/generate-script, POST /api/auto-research)
 """
 
 import requests
